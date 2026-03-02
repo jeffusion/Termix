@@ -26,4 +26,16 @@
     <string name="input_mode_type_null_desc">صحيح دلاليًا ولكن قد يتعطل بعض أساليب الإدخال</string>
     <string name="input_mode_visible_password">وضع التوافق القديم</string>
     <string name="input_mode_visible_password_desc">يصلح مشكلة صدى لوحة مفاتيح سامسونج؛ قد يعطل إدخال CJK في Gboard</string>
+    <string name="layout_mode">وضع التخطيط</string>
+    <string name="layout_mode_desc">اختر كيفية عرض الجلسات</string>
+    <string name="layout_mode_classic">وضع الهاتف</string>
+    <string name="layout_mode_classic_desc">درج التنقل بإيماءة السحب</string>
+    <string name="layout_mode_tab_bar">وضع الكمبيوتر</string>
+    <string name="layout_mode_tab_bar_desc">شريط علامات تبويب أفقي مثل المتصفح</string>
+    <string name="close_last_session">سلوك إغلاق الجلسة الأخيرة</string>
+    <string name="close_last_session_desc">ماذا تفعل عند إغلاق الجلسة الأخيرة</string>
+    <string name="close_last_session_exit">إنهاء التطبيق</string>
+    <string name="close_last_session_exit_desc">إغلاق التطبيق</string>
+    <string name="close_last_session_new">جلسة جديدة</string>
+    <string name="close_last_session_new_desc">إنشاء جلسة جديدة بدلاً من الإنهاء</string>
 </resources>

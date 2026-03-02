@@ -77,6 +77,16 @@ object InputMode {
     const val TYPE_NULL = 1
     const val VISIBLE_PASSWORD = 2
 }
+object LayoutMode {
+    const val CLASSIC = 0   // Original Material drawer + TopAppBar
+    const val TAB_BAR = 1   // Horizontal tab bar mode
+}
+
+object CloseLastSessionBehavior {
+    const val EXIT_APP = 0      // Exit the app when last session is closed
+    const val NEW_SESSION = 1   // Create a new session instead of exiting
+}
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -85,7 +95,8 @@ fun Settings(modifier: Modifier = Modifier,navController: NavController,mainActi
     val context = LocalContext.current
     var selectedOption by remember { mutableIntStateOf(Settings.working_Mode) }
     var selectedInputMode by remember { mutableIntStateOf(Settings.input_mode) }
-
+    var selectedLayoutMode by remember { mutableIntStateOf(Settings.layout_mode) }
+    var selectedCloseLastSessionBehavior by remember { mutableIntStateOf(Settings.close_last_session_behavior) }
     PreferenceLayout(label = stringResource(strings.settings)) {
         PreferenceGroup(heading = stringResource(strings.default_working_mode)) {
 
@@ -181,6 +192,77 @@ fun Settings(modifier: Modifier = Modifier,navController: NavController,mainActi
                 })
         }
 
+        PreferenceGroup(heading = stringResource(strings.layout_mode)) {
+            SettingsCard(
+                title = { Text(stringResource(strings.layout_mode_classic)) },
+                description = { Text(stringResource(strings.layout_mode_classic_desc)) },
+                startWidget = {
+                    RadioButton(
+                        modifier = Modifier.padding(start = 8.dp),
+                        selected = selectedLayoutMode == LayoutMode.CLASSIC,
+                        onClick = {
+                            selectedLayoutMode = LayoutMode.CLASSIC
+                            Settings.layout_mode = selectedLayoutMode
+                        })
+                },
+                onClick = {
+                    selectedLayoutMode = LayoutMode.CLASSIC
+                    Settings.layout_mode = selectedLayoutMode
+                })
+
+            SettingsCard(
+                title = { Text(stringResource(strings.layout_mode_tab_bar)) },
+                description = { Text(stringResource(strings.layout_mode_tab_bar_desc)) },
+                startWidget = {
+                    RadioButton(
+                        modifier = Modifier.padding(start = 8.dp),
+                        selected = selectedLayoutMode == LayoutMode.TAB_BAR,
+                        onClick = {
+                            selectedLayoutMode = LayoutMode.TAB_BAR
+                            Settings.layout_mode = selectedLayoutMode
+                        })
+                },
+                onClick = {
+                    selectedLayoutMode = LayoutMode.TAB_BAR
+                    Settings.layout_mode = selectedLayoutMode
+                })
+        }
+
+        PreferenceGroup(heading = stringResource(strings.close_last_session)) {
+            SettingsCard(
+                title = { Text(stringResource(strings.close_last_session_exit)) },
+                description = { Text(stringResource(strings.close_last_session_exit_desc)) },
+                startWidget = {
+                    RadioButton(
+                        modifier = Modifier.padding(start = 8.dp),
+                        selected = selectedCloseLastSessionBehavior == CloseLastSessionBehavior.EXIT_APP,
+                        onClick = {
+                            selectedCloseLastSessionBehavior = CloseLastSessionBehavior.EXIT_APP
+                            Settings.close_last_session_behavior = selectedCloseLastSessionBehavior
+                        })
+                },
+                onClick = {
+                    selectedCloseLastSessionBehavior = CloseLastSessionBehavior.EXIT_APP
+                    Settings.close_last_session_behavior = selectedCloseLastSessionBehavior
+                })
+
+            SettingsCard(
+                title = { Text(stringResource(strings.close_last_session_new)) },
+                description = { Text(stringResource(strings.close_last_session_new_desc)) },
+                startWidget = {
+                    RadioButton(
+                        modifier = Modifier.padding(start = 8.dp),
+                        selected = selectedCloseLastSessionBehavior == CloseLastSessionBehavior.NEW_SESSION,
+                        onClick = {
+                            selectedCloseLastSessionBehavior = CloseLastSessionBehavior.NEW_SESSION
+                            Settings.close_last_session_behavior = selectedCloseLastSessionBehavior
+                        })
+                },
+                onClick = {
+                    selectedCloseLastSessionBehavior = CloseLastSessionBehavior.NEW_SESSION
+                    Settings.close_last_session_behavior = selectedCloseLastSessionBehavior
+                })
+        }
 
         PreferenceGroup {
             SettingsToggle(

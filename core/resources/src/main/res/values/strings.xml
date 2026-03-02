@@ -66,4 +66,16 @@
     <string name="input_mode_type_null_desc">Semantically correct but may break some IMEs</string>
     <string name="input_mode_visible_password">Legacy Workaround</string>
     <string name="input_mode_visible_password_desc">Fixes Samsung keyboard echo; may break Gboard CJK input</string>
+    <string name="layout_mode">Layout Mode</string>
+    <string name="layout_mode_desc">Choose how sessions are displayed</string>
+    <string name="layout_mode_classic">Phone</string>
+    <string name="layout_mode_classic_desc">Navigation drawer with swipe gesture</string>
+    <string name="layout_mode_tab_bar">Desktop</string>
+    <string name="layout_mode_tab_bar_desc">Horizontal tab bar like browser</string>
+    <string name="close_last_session">Close Last Session Behavior</string>
+    <string name="close_last_session_desc">What to do when closing the last session</string>
+    <string name="close_last_session_exit">Exit App</string>
+    <string name="close_last_session_exit_desc">Close the application</string>
+    <string name="close_last_session_new">New Session</string>
+    <string name="close_last_session_new_desc">Create a new session instead of exiting</string>
 </resources>

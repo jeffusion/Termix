@@ -14,6 +14,7 @@ import com.rk.libcommons.createFileIfNot
 import com.rk.libcommons.dpToPx
 import com.rk.settings.Settings
 import com.rk.terminal.ui.activities.terminal.MainActivity
+import com.rk.terminal.ui.screens.settings.CloseLastSessionBehavior
 import com.rk.terminal.ui.screens.terminal.virtualkeys.SpecialButton
 import com.rk.terminal.ui.screens.terminal.virtualkeys.VirtualKeysView
 import com.termux.terminal.TerminalEmulator
@@ -33,7 +34,10 @@ class TerminalBackEnd(val terminal: TerminalView,val activity: MainActivity) : T
     }
     
     override fun onTitleChanged(changedSession: TerminalSession) {
-
+        val title = changedSession.title ?: return
+        val service = activity.sessionBinder?.getService() ?: return
+        val sessionId = activity.sessionBinder?.getSessionId(changedSession) ?: return
+        service.updateTerminalTitle(sessionId, title)
     }
     
     override fun onSessionFinished(finishedSession: TerminalSession) {
@@ -167,17 +171,38 @@ class TerminalBackEnd(val terminal: TerminalView,val activity: MainActivity) : T
             return true
         }
         if (keyCode == KeyEvent.KEYCODE_ENTER && !session.isRunning) {
-            activity.sessionBinder?.terminateSession(activity.sessionBinder!!.getService().currentSession.value.first)
-            if (activity.sessionBinder!!.getService().sessionList.isEmpty()){
-                activity.finish()
-            }else{
-                changeSession(activity,activity.sessionBinder!!.getService().sessionList.keys.first())
+            val service = activity.sessionBinder!!.getService()
+            val currentId = service.currentSession.value.first
+            val sessionKeys = service.sessionOrder.toList()
+            
+            if (sessionKeys.size <= 1) {
+                // Last session
+                if (Settings.close_last_session_behavior == CloseLastSessionBehavior.NEW_SESSION) {
+                    // Create new session BEFORE terminating old one to prevent service stopSelf()
+                    val newSessionId = generateUniqueSessionId(service.sessionOrder.toList())
+                    terminalView.get()?.let {
+                        val client = TerminalBackEnd(it, activity)
+                        activity.sessionBinder!!.createSession(newSessionId, client, activity, workingMode = Settings.working_Mode)
+                    }
+                    changeSession(activity, newSessionId)
+                    // Now safe to terminate the old session
+                    activity.sessionBinder?.terminateSession(currentId)
+                } else {
+                    // Exit app - terminate then finish
+                    activity.sessionBinder?.terminateSession(currentId)
+                    if (service.sessionOrder.isEmpty()) {
+                        activity.finish()
+                    }
+                }
+            } else {
+                // Not last session - switch to next and terminate current
+                changeSession(activity, service.sessionOrder.first { it != currentId })
+                activity.sessionBinder?.terminateSession(currentId)
             }
             return true
         }
         return false
     }
-    
     override fun onKeyUp(keyCode: Int, e: KeyEvent): Boolean {
         return false
     }
@@ -228,5 +253,15 @@ class TerminalBackEnd(val terminal: TerminalView,val activity: MainActivity) : T
     private fun showSoftInput() {
         terminal.requestFocus()
         KeyboardUtils.showSoftInput(terminal)
+    }
+
+    private fun generateUniqueSessionId(existingIds: List<String>): String {
+        var index = 1
+        var newId: String
+        do {
+            newId = "main$index"
+            index++
+        } while (newId in existingIds)
+        return newId
     }
 }

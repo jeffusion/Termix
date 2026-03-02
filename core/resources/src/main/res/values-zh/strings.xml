@@ -66,4 +66,16 @@
     <string name="input_mode_type_null_desc">语义最正确，但可能导致部分输入法异常</string>
     <string name="input_mode_visible_password">旧版兼容模式</string>
     <string name="input_mode_visible_password_desc">修复三星键盘回显问题；可能导致 Gboard 中文输入失效</string>
+    <string name="layout_mode">布局模式</string>
+    <string name="layout_mode_desc">选择会话的显示方式</string>
+    <string name="layout_mode_classic">手机模式</string>
+    <string name="layout_mode_classic_desc">滑动手势打开导航抽屉</string>
+    <string name="layout_mode_tab_bar">电脑模式</string>
+    <string name="layout_mode_tab_bar_desc">类似浏览器的水平标签栏</string>
+    <string name="close_last_session">关闭最后会话行为</string>
+    <string name="close_last_session_desc">关闭最后一个会话时的操作</string>
+    <string name="close_last_session_exit">退出应用</string>
+    <string name="close_last_session_exit_desc">关闭应用程序</string>
+    <string name="close_last_session_new">新建会话</string>
+    <string name="close_last_session_new_desc">创建新会话而不是退出</string>
 </resources>

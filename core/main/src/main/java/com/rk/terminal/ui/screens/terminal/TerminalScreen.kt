@@ -11,7 +11,9 @@ import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -89,9 +92,13 @@ import com.rk.libcommons.localDir
 import com.rk.libcommons.pendingCommand
 import com.rk.settings.Settings
 import com.rk.terminal.ui.activities.terminal.MainActivity
+import com.rk.terminal.ui.components.InputDialog
+import com.rk.terminal.ui.components.SessionTabBar
 import com.rk.terminal.ui.routes.MainActivityRoutes
+import com.rk.terminal.ui.screens.settings.LayoutMode
 import com.rk.terminal.ui.screens.settings.SettingsCard
 import com.rk.terminal.ui.screens.settings.WorkingMode
+import com.rk.terminal.ui.screens.settings.CloseLastSessionBehavior
 import com.rk.terminal.ui.screens.terminal.virtualkeys.VirtualKeysConstants
 import com.rk.terminal.ui.screens.terminal.virtualkeys.VirtualKeysInfo
 import com.rk.terminal.ui.screens.terminal.virtualkeys.VirtualKeysListener
@@ -148,8 +155,7 @@ var showVirtualKeys = mutableStateOf(Settings.virtualKeys)
 var showHorizontalToolbar = mutableStateOf(Settings.toolbar)
 
 
-
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun TerminalScreen(
     modifier: Modifier = Modifier,
@@ -208,25 +214,72 @@ fun TerminalScreen(
     }
 
     Box {
-        val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
         val scope = rememberCoroutineScope()
-        val configuration = LocalConfiguration.current
-        val screenWidthDp = configuration.screenWidthDp
-        val drawerWidth = (screenWidthDp * 0.84).dp
+        val isTabBarMode = Settings.layout_mode == LayoutMode.TAB_BAR
         var showAddDialog by remember { mutableStateOf(false) }
+        var showRenameDialogFor by remember { mutableStateOf<String?>(null) }
 
-        BackHandler(enabled = drawerState.isOpen) {
-            scope.launch {
-                drawerState.close()
+        // Helper function to generate unique session ID
+        fun generateUniqueSessionId(): String {
+            val existingStrings = mainActivityActivity.sessionBinder?.getService()?.sessionOrder?.toList() ?: emptyList()
+            var index = 1
+            var newString: String
+            do {
+                newString = "main$index"
+                index++
+            } while (newString in existingStrings)
+            return newString
+        }
+
+        // Helper function to create a new session
+        fun createNewSession(workingMode: Int) {
+            val sessionId = generateUniqueSessionId()
+            terminalView.get()?.let {
+                val client = TerminalBackEnd(it, mainActivityActivity)
+                mainActivityActivity.sessionBinder!!.createSession(
+                    sessionId,
+                    client,
+                    mainActivityActivity,
+                    workingMode = workingMode
+                )
+            }
+            changeSession(mainActivityActivity, session_id = sessionId)
+        }
+
+        // Helper function to handle closing a session
+        fun handleCloseSession(sessionId: String, currentSessionId: String) {
+            val service = mainActivityActivity.sessionBinder?.getService() ?: return
+            val keys = service.sessionOrder.toList()
+            
+            if (keys.size <= 1) {
+                // Last session - check behavior setting
+                if (Settings.close_last_session_behavior == CloseLastSessionBehavior.NEW_SESSION) {
+                    // Create new session BEFORE terminating old one to prevent service stopSelf()
+                    createNewSession(Settings.working_Mode)
+                    // Now safe to terminate the old session
+                    mainActivityActivity.sessionBinder?.terminateSession(sessionId)
+                } else {
+                    // Exit app - terminate then finish
+                    mainActivityActivity.sessionBinder?.terminateSession(sessionId)
+                    if (service.sessionOrder.isEmpty()) {
+                        mainActivityActivity.finish()
+                    }
+                }
+            } else {
+                // Not last session - switch to adjacent session if closing current
+                if (sessionId == currentSessionId) {
+                    val currentIndex = keys.indexOf(sessionId)
+                    val nextId = if (currentIndex < keys.size - 1) {
+                        keys[currentIndex + 1]
+                    } else {
+                        keys[currentIndex - 1]
+                    }
+                    changeSession(mainActivityActivity, nextId)
+                }
+                mainActivityActivity.sessionBinder?.terminateSession(sessionId)
             }
         }
-
-        if (drawerState.isClosed){
-            SetStatusBarTextColor(isDarkIcons = darkText.value)
-        }else{
-            SetStatusBarTextColor(isDarkIcons = !isDarkMode)
-        }
-
+        // Add session dialog (shared between wide and narrow layouts)
         if (showAddDialog){
             BasicAlertDialog(
                 onDismissRequest = {
@@ -234,42 +287,12 @@ fun TerminalScreen(
                 }
             ) {
 
-                fun createSession(workingMode:Int){
-                    fun generateUniqueString(existingStrings: List<String>): String {
-                        var index = 1
-                        var newString: String
-
-                        do {
-                            newString = "main$index"
-                            index++
-                        } while (newString in existingStrings)
-
-                        return newString
-                    }
-
-                    val sessionId = generateUniqueString(mainActivityActivity.sessionBinder!!.getService().sessionList.keys.toList())
-
-                    terminalView.get()
-                        ?.let {
-                            val client = TerminalBackEnd(it, mainActivityActivity)
-                            mainActivityActivity.sessionBinder!!.createSession(
-                                sessionId,
-                                client,
-                                mainActivityActivity, workingMode = workingMode
-                            )
-                        }
-
-
-                    changeSession(mainActivityActivity, session_id = sessionId)
-                }
-
-
                 PreferenceGroup {
                     SettingsCard(
                         title = { Text("Alpine") },
                         description = {Text(stringResource(strings.alpine_desc))},
                         onClick = {
-                           createSession(workingMode = WorkingMode.ALPINE)
+                           createNewSession(workingMode = WorkingMode.ALPINE)
                             showAddDialog = false
                         })
 
@@ -277,354 +300,462 @@ fun TerminalScreen(
                         title = { Text("Android") },
                         description = {Text(stringResource(strings.android_desc))},
                         onClick = {
-                            createSession(workingMode = WorkingMode.ANDROID)
+                            createNewSession(workingMode = WorkingMode.ANDROID)
                             showAddDialog = false
                         })
                 }
             }
         }
 
-        ModalNavigationDrawer(
-            drawerState = drawerState,
-            gesturesEnabled = drawerState.isOpen || !(showToolbar.value && (LocalConfiguration.current.orientation != Configuration.ORIENTATION_LANDSCAPE || showHorizontalToolbar.value)),
-            drawerContent = {
-                ModalDrawerSheet(modifier = Modifier.width(drawerWidth)) {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+        // Rename session dialog
+        showRenameDialogFor?.let { sessionId ->
+            val service = mainActivityActivity.sessionBinder?.getService()
+            val currentDisplayTitle = service?.getDisplayTitle(sessionId) ?: sessionId
+            var renameValue by remember(sessionId) { mutableStateOf(currentDisplayTitle) }
+            InputDialog(
+                title = stringResource(strings.session) + " — " + sessionId,
+                inputLabel = stringResource(strings.session),
+                inputValue = renameValue,
+                onInputValueChange = { renameValue = it },
+                onConfirm = {
+                    service?.setCustomName(sessionId, renameValue)
+                },
+                onDismiss = { showRenameDialogFor = null }
+            )
+        }
+
+        if (isTabBarMode) {
+            SetStatusBarTextColor(isDarkIcons = darkText.value)
+            Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
+                val service = mainActivityActivity.sessionBinder?.getService()
+                val sessionKeys = service?.sessionOrder?.toList() ?: emptyList()
+                val currentSessionId = service?.currentSession?.value?.first ?: ""
+
+                SessionTabBar(
+                    sessions = sessionKeys,
+                    currentSessionId = currentSessionId,
+                    getDisplayTitle = { id -> service?.getDisplayTitle(id) ?: id },
+                    onSelectSession = { id -> changeSession(mainActivityActivity, id) },
+                    onCloseSession = { id -> handleCloseSession(id, currentSessionId) },
+                    onAddSession = { showAddDialog = true },
+                    onRenameSession = { id -> showRenameDialogFor = id },
+                    onOpenSettings = { navController.navigate(MainActivityRoutes.Settings.route) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                TabBarTerminalContent(
+                    mainActivityActivity = mainActivityActivity,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        } else {
+            val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+            val configuration = LocalConfiguration.current
+            val screenWidthDp = configuration.screenWidthDp
+            val drawerWidth = (screenWidthDp * 0.84).dp
+
+            BackHandler(enabled = drawerState.isOpen) {
+                scope.launch { drawerState.close() }
+            }
+
+            if (drawerState.isClosed) {
+                SetStatusBarTextColor(isDarkIcons = darkText.value)
+            } else {
+                SetStatusBarTextColor(isDarkIcons = !isDarkMode)
+            }
+
+            ModalNavigationDrawer(
+                drawerState = drawerState,
+                gesturesEnabled = drawerState.isOpen || !(showToolbar.value && (LocalConfiguration.current.orientation != Configuration.ORIENTATION_LANDSCAPE || showHorizontalToolbar.value)),
+                drawerContent = {
+                    ModalDrawerSheet(modifier = Modifier.width(drawerWidth)) {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text(
-                                text = stringResource(strings.session),
-                                style = MaterialTheme.typography.titleLarge
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = stringResource(strings.session),
+                                    style = MaterialTheme.typography.titleLarge
+                                )
 
-                            Row {
-                                val keyboardController = LocalSoftwareKeyboardController.current
-                                IconButton(onClick = {
-                                    navController.navigate(MainActivityRoutes.Settings.route)
-                                    keyboardController?.hide()
-                                }) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Settings,
-                                        contentDescription = null
-                                    )
+                                Row {
+                                    val keyboardController = LocalSoftwareKeyboardController.current
+                                    IconButton(onClick = {
+                                        navController.navigate(MainActivityRoutes.Settings.route)
+                                        keyboardController?.hide()
+                                    }) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Settings,
+                                            contentDescription = null
+                                        )
+                                    }
+
+                                    IconButton(onClick = {
+                                        showAddDialog = true
+                                    }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Add,
+                                            contentDescription = null
+                                        )
+                                    }
+
                                 }
 
-                                IconButton(onClick = {
-                                    showAddDialog = true
-                                }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Add,
-                                        contentDescription = null
-                                    )
-                                }
 
                             }
 
-
-                        }
-
-                        mainActivityActivity.sessionBinder?.getService()?.sessionList?.keys?.toList()?.let {
-                            LazyColumn {
-                                items(it) { session_id ->
-                                    SelectableCard(
-                                        selected = session_id == mainActivityActivity.sessionBinder?.getService()?.currentSession?.value?.first,
-                                        onSelect = {
-                                            changeSession(
-                                                mainActivityActivity,
-                                                session_id
-                                            )
-                                        },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(8.dp)
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            verticalAlignment = Alignment.CenterVertically
+                            mainActivityActivity.sessionBinder?.getService()?.let { service ->
+                                val sessionKeys = service.sessionOrder.toList()
+                                LazyColumn {
+                                    items(sessionKeys) { session_id ->
+                                        SelectableCard(
+                                            selected = session_id == service.currentSession.value.first,
+                                            onSelect = {
+                                                changeSession(
+                                                    mainActivityActivity,
+                                                    session_id
+                                                )
+                                            },
+                                            onLongPress = {
+                                                showRenameDialogFor = session_id
+                                            },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(8.dp)
                                         ) {
-                                            Text(
-                                                text = session_id,
-                                                style = MaterialTheme.typography.bodyLarge
-                                            )
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = service.getDisplayTitle(session_id),
+                                                    style = MaterialTheme.typography.bodyLarge
+                                                )
 
-                                            if (session_id != mainActivityActivity.sessionBinder?.getService()?.currentSession?.value?.first) {
-                                                Spacer(modifier = Modifier.weight(1f))
+                                                if (session_id != service.currentSession.value.first) {
+                                                    Spacer(modifier = Modifier.weight(1f))
 
-                                                IconButton(
-                                                    onClick = {
-                                                        println(session_id)
-                                                        mainActivityActivity.sessionBinder?.terminateSession(
-                                                            session_id
-                                                        )
-                                                    },
-                                                    modifier = Modifier.size(24.dp)
-                                                ) {
+                                                    IconButton(
+                                                        onClick = {
+                                                            println(session_id)
+                                                            mainActivityActivity.sessionBinder?.terminateSession(
+                                                                session_id
+                                                            )
+                                                        },
+                                                        modifier = Modifier.size(24.dp)
+                                                    ) {
                                                     
-                                                    Icon(
-                                                        imageVector = Icons.Outlined.Delete,
-                                                        contentDescription = null,
-                                                        modifier = Modifier.size(20.dp)
-                                                    )
+                                                        Icon(
+                                                            imageVector = Icons.Outlined.Delete,
+                                                            contentDescription = null,
+                                                            modifier = Modifier.size(20.dp)
+                                                        )
+                                                    }
                                                 }
-                                            }
 
+                                            }
                                         }
                                     }
                                 }
                             }
+
+                        }
+                    }
+
+                },
+                content = {
+                    TerminalContent(
+                        mainActivityActivity = mainActivityActivity,
+                        navController = navController,
+                        showAddDialog = { showAddDialog = true },
+                        openDrawer = { scope.launch { drawerState.open() } },
+                    )
+                })
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TerminalContent(
+    mainActivityActivity: MainActivity,
+    navController: NavController,
+    showAddDialog: () -> Unit,
+    openDrawer: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.TopStart) {
+        BackgroundImage()
+        val color = getComposeColor()
+        Column {
+
+            fun getNameOfWorkingMode(workingMode: Int?): String {
+                return when (workingMode) {
+                    0 -> "ALPINE".lowercase()
+                    1 -> "ANDROID".lowercase()
+                    null -> "null"
+                    else -> "unknown"
+                }
+            }
+
+            val showToolbarCondition = showToolbar.value && (LocalConfiguration.current.orientation != Configuration.ORIENTATION_LANDSCAPE || showHorizontalToolbar.value)
+
+            if (showToolbarCondition) {
+                val service = mainActivityActivity.sessionBinder?.getService()
+                val currentSessionId = service?.currentSession?.value?.first ?: ""
+                val displayTitle = service?.getDisplayTitle(currentSessionId) ?: currentSessionId
+                val workingModeName = getNameOfWorkingMode(service?.currentSession?.value?.second)
+
+                TopAppBar(
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                        scrolledContainerColor = androidx.compose.ui.graphics.Color.Transparent
+                    ),
+                    title = {
+                        Column {
+                            Text(text = "ReTerminal", color = color)
+                            Text(
+                                style = MaterialTheme.typography.bodySmall,
+                                text = "$displayTitle ($workingModeName)",
+                                color = color
+                            )
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { openDrawer() }) {
+                            Icon(Icons.Default.Menu, null, tint = color)
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { showAddDialog() }) {
+                            Icon(Icons.Default.Add, null, tint = color)
+                        }
+                    }
+                )
+            }
+
+            val density = LocalDensity.current
+            TerminalPaneContent(
+                mainActivityActivity = mainActivityActivity,
+                modifier = Modifier
+                    .imePadding()
+                    .navigationBarsPadding()
+                    .padding(top = if (showToolbar.value) {
+                        0.dp
+                    } else {
+                        with(density) {
+                            TopAppBarDefaults.windowInsets.getTop(density).toDp()
+                        }
+                    })
+            )
+        }
+
+
+
+    }
+}
+
+@Composable
+fun TabBarTerminalContent(
+    mainActivityActivity: MainActivity,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.TopStart) {
+        BackgroundImage()
+        TerminalPaneContent(
+            mainActivityActivity = mainActivityActivity,
+            modifier = Modifier
+                .fillMaxSize()
+                .imePadding()
+                .navigationBarsPadding()
+        )
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun TerminalPaneContent(
+    mainActivityActivity: MainActivity,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        AndroidView(
+            factory = { context ->
+                TerminalView(context, null).apply {
+                    terminalView = WeakReference(this)
+                    setTextSize(
+                        dpToPx(
+                            Settings.terminal_font_size.toFloat(),
+                            context
+                        )
+                    )
+                    val client = TerminalBackEnd(this, mainActivityActivity)
+
+                    val session = if (pendingCommand != null) {
+                        mainActivityActivity.sessionBinder!!.getService().currentSession.value = Pair(
+                            pendingCommand!!.id, pendingCommand!!.workingMode
+                        )
+                        mainActivityActivity.sessionBinder!!.getSession(
+                            pendingCommand!!.id
+                        )
+                            ?: mainActivityActivity.sessionBinder!!.createSession(
+                                pendingCommand!!.id,
+                                client,
+                                mainActivityActivity, workingMode = Settings.working_Mode
+                            )
+                    } else {
+                        mainActivityActivity.sessionBinder!!.getSession(
+                            mainActivityActivity.sessionBinder!!.getService().currentSession.value.first
+                        )
+                            ?: mainActivityActivity.sessionBinder!!.createSession(
+                                mainActivityActivity.sessionBinder!!.getService().currentSession.value.first,
+                                client,
+                                mainActivityActivity,
+                                workingMode = Settings.working_Mode
+                            )
+                    }
+
+                    session.updateTerminalSessionClient(client)
+                    attachSession(session)
+                    setTerminalViewClient(client)
+                    setTypeface(font)
+
+                    post {
+                        val color = getViewColor()
+
+                        keepScreenOn = true
+                        requestFocus()
+                        isFocusableInTouchMode = true
+
+                        mEmulator?.mColors?.mCurrentColors?.apply {
+                            set(256, color)
+                            set(258, color)
                         }
 
+                        val colorsFile = localDir().child("colors.properties")
+                        if (colorsFile.exists() && colorsFile.isFile) {
+                            val props = Properties()
+                            FileInputStream(colorsFile).use { input ->
+                                props.load(input)
+                            }
+                            TerminalColors.COLOR_SCHEME.updateWith(props)
+                        }
                     }
                 }
-
             },
-            content = {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        BackgroundImage()
-                        val color = getComposeColor()
-                        Column {
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            update = { terminalView ->
+                terminalView.onScreenUpdated()
+                val color = getViewColor()
 
-                            fun getNameOfWorkingMode(workingMode:Int?):String{
-                                return when(workingMode){
-                                    0 -> "ALPINE".lowercase()
-                                    1 -> "ANDROID".lowercase()
-                                    null -> "null"
-                                    else -> "unknown"
-                                }
-                            }
-
-
-                            if (showToolbar.value && (LocalConfiguration.current.orientation != Configuration.ORIENTATION_LANDSCAPE || showHorizontalToolbar.value)){
-                                TopAppBar(
-                                    colors = TopAppBarDefaults.topAppBarColors(
-                                        containerColor = androidx.compose.ui.graphics.Color.Transparent,
-                                        scrolledContainerColor = androidx.compose.ui.graphics.Color.Transparent
-                                    ),
-                                    title = {
-                                        Column {
-                                            Text(text = "ReTerminal", color = color)
-                                            Text(style = MaterialTheme.typography.bodySmall,text = mainActivityActivity.sessionBinder?.getService()?.currentSession?.value?.first + " (${getNameOfWorkingMode(mainActivityActivity.sessionBinder?.getService()?.currentSession?.value?.second)})",color = color)
-                                        }
-                                    },
-                                    navigationIcon = {
-                                        IconButton(onClick = {
-                                            scope.launch { drawerState.open() }
-                                        }) {
-                                            Icon(Icons.Default.Menu, null, tint = color)
-                                        }
-                                    },
-                                    actions = {
-                                        IconButton(onClick = {
-                                            showAddDialog = true
-                                        }) {
-                                            Icon(Icons.Default.Add,null, tint = color)
-                                        }
-                                    }
-                                )
-                            }
-
-                            val density = LocalDensity.current
-                            Column(modifier = Modifier.imePadding().navigationBarsPadding().padding(top = if (showToolbar.value){0.dp}else{
-                                with(density){
-                                    TopAppBarDefaults.windowInsets.getTop(density).toDp()
-                                }
-                            })) {
-                                AndroidView(
-                                    factory = { context ->
-                                        TerminalView(context, null).apply {
-                                            terminalView = WeakReference(this)
-                                            setTextSize(
-                                                dpToPx(
-                                                    Settings.terminal_font_size.toFloat(),
-                                                    context
-                                                )
-                                            )
-                                            val client = TerminalBackEnd(this, mainActivityActivity)
-
-                                            val session = if (pendingCommand != null) {
-                                                mainActivityActivity.sessionBinder!!.getService().currentSession.value = Pair(
-                                                    pendingCommand!!.id, pendingCommand!!.workingMode)
-                                                mainActivityActivity.sessionBinder!!.getSession(
-                                                    pendingCommand!!.id
-                                                )
-                                                    ?: mainActivityActivity.sessionBinder!!.createSession(
-                                                        pendingCommand!!.id,
-                                                        client,
-                                                        mainActivityActivity, workingMode = Settings.working_Mode
-                                                    )
-                                            } else {
-                                                mainActivityActivity.sessionBinder!!.getSession(
-                                                    mainActivityActivity.sessionBinder!!.getService().currentSession.value.first
-                                                )
-                                                    ?: mainActivityActivity.sessionBinder!!.createSession(
-                                                        mainActivityActivity.sessionBinder!!.getService().currentSession.value.first,
-                                                        client,
-                                                        mainActivityActivity,workingMode = Settings.working_Mode
-                                                    )
-                                            }
-
-                                            session.updateTerminalSessionClient(client)
-                                            attachSession(session)
-                                            setTerminalViewClient(client)
-                                            setTypeface(font)
-
-                                            post {
-                                                val color = getViewColor()
-
-                                                keepScreenOn = true
-                                                requestFocus()
-                                                isFocusableInTouchMode = true
-
-                                                mEmulator?.mColors?.mCurrentColors?.apply {
-                                                    set(256, color)
-                                                    set(258, color)
-                                                }
-
-                                                val colorsFile = localDir().child("colors.properties")
-                                                if (colorsFile.exists() && colorsFile.isFile){
-                                                    val props = Properties()
-                                                    FileInputStream(colorsFile).use { input ->
-                                                        props.load(input)
-                                                    }
-                                                    TerminalColors.COLOR_SCHEME.updateWith(props)
-                                                }
-                                            }
-                                        }
-                                    },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .weight(1f),
-                                    update = { terminalView ->
-                                        terminalView.onScreenUpdated()
-                                       val color = getViewColor()
-
-                                        terminalView.mEmulator?.mColors?.mCurrentColors?.apply {
-                                            set(256, color)
-                                            set(258, color)
-                                        }
-                                    },
-                                )
-
-                                if (showVirtualKeys.value){
-                                    val pagerState = rememberPagerState(pageCount = { 2 })
-                                    val onSurfaceColor = MaterialTheme.colorScheme.onSurface.toArgb()
-                                    HorizontalPager(
-                                        state = pagerState,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(75.dp)
-                                    ) { page ->
-                                        when (page) {
-                                            0 -> {
-                                                terminalView.get()?.requestFocus()
-                                                //terminalView.get()?.requestFocusFromTouch()
-                                                AndroidView(
-                                                    factory = { context ->
-                                                        VirtualKeysView(context, null).apply {
-                                                            virtualKeysView = WeakReference(this)
-                                                            virtualKeysViewClient =
-                                                                terminalView.get()?.mTermSession?.let {
-                                                                    VirtualKeysListener(
-                                                                        it
-                                                                    )
-                                                                }
-
-                                                            buttonTextColor = onSurfaceColor!!
-
-                                                            reload(
-                                                                VirtualKeysInfo(
-                                                                    VIRTUAL_KEYS,
-                                                                    "",
-                                                                    VirtualKeysConstants.CONTROL_CHARS_ALIASES
-                                                                )
-                                                            )
-                                                        }
-                                                    },
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .height(75.dp)
-                                                )
-                                            }
-
-                                            1 -> {
-                                                var text by rememberSaveable { mutableStateOf("") }
-
-                                                AndroidView(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .height(75.dp),
-                                                    factory = { ctx ->
-                                                        EditText(ctx).apply {
-                                                            maxLines = 1
-                                                            isSingleLine = true
-                                                            imeOptions = EditorInfo.IME_ACTION_DONE
-
-                                                            // Listen for text changes to update Compose state
-                                                            doOnTextChanged { textInput, _, _, _ ->
-                                                                text = textInput.toString()
-                                                            }
-
-                                                            setOnEditorActionListener { v, actionId, event ->
-                                                                if (actionId == EditorInfo.IME_ACTION_DONE) {
-                                                                    if (text.isEmpty()) {
-                                                                        // Dispatch enter key events if text is empty
-                                                                        val eventDown = KeyEvent(
-                                                                            KeyEvent.ACTION_DOWN,
-                                                                            KeyEvent.KEYCODE_ENTER
-                                                                        )
-                                                                        val eventUp = KeyEvent(
-                                                                            KeyEvent.ACTION_UP,
-                                                                            KeyEvent.KEYCODE_ENTER
-                                                                        )
-                                                                        terminalView.get()
-                                                                            ?.dispatchKeyEvent(eventDown)
-                                                                        terminalView.get()
-                                                                            ?.dispatchKeyEvent(eventUp)
-                                                                    } else {
-                                                                        terminalView.get()?.currentSession?.write(
-                                                                            text
-                                                                        )
-                                                                        setText("")
-                                                                    }
-                                                                    true
-                                                                } else {
-                                                                    false
-                                                                }
-                                                            }
-                                                        }
-                                                    },
-                                                    update = { editText ->
-                                                        // Keep EditText's text in sync with Compose state, avoid infinite loop by only updating if different
-                                                        if (editText.text.toString() != text) {
-                                                            editText.setText(text)
-                                                            editText.setSelection(text.length)
-                                                        }
-                                                    }
-                                                )
-                                            }
-                                        }
-
-                                    }
-                                }else{
-                                    virtualKeysView = WeakReference(null)
-                                }
-
-                            }
-                        }
-
-
-
+                terminalView.mEmulator?.mColors?.mCurrentColors?.apply {
+                    set(256, color)
+                    set(258, color)
                 }
+            },
+        )
 
-            })
+        if (showVirtualKeys.value) {
+            val pagerState = rememberPagerState(pageCount = { 2 })
+            val onSurfaceColor = MaterialTheme.colorScheme.onSurface.toArgb()
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(75.dp)
+            ) { page ->
+                when (page) {
+                    0 -> {
+                        terminalView.get()?.requestFocus()
+                        AndroidView(
+                            factory = { context ->
+                                VirtualKeysView(context, null).apply {
+                                    virtualKeysView = WeakReference(this)
+                                    virtualKeysViewClient =
+                                        terminalView.get()?.mTermSession?.let {
+                                            VirtualKeysListener(it)
+                                        }
+
+                                    buttonTextColor = onSurfaceColor
+
+                                    reload(
+                                        VirtualKeysInfo(
+                                            VIRTUAL_KEYS,
+                                            "",
+                                            VirtualKeysConstants.CONTROL_CHARS_ALIASES
+                                        )
+                                    )
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(75.dp)
+                        )
+                    }
+
+                    1 -> {
+                        var text by rememberSaveable { mutableStateOf("") }
+
+                        AndroidView(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(75.dp),
+                            factory = { ctx ->
+                                EditText(ctx).apply {
+                                    maxLines = 1
+                                    isSingleLine = true
+                                    imeOptions = EditorInfo.IME_ACTION_DONE
+
+                                    doOnTextChanged { textInput, _, _, _ ->
+                                        text = textInput.toString()
+                                    }
+
+                                    setOnEditorActionListener { _, actionId, _ ->
+                                        if (actionId == EditorInfo.IME_ACTION_DONE) {
+                                            if (text.isEmpty()) {
+                                                val eventDown = KeyEvent(
+                                                    KeyEvent.ACTION_DOWN,
+                                                    KeyEvent.KEYCODE_ENTER
+                                                )
+                                                val eventUp = KeyEvent(
+                                                    KeyEvent.ACTION_UP,
+                                                    KeyEvent.KEYCODE_ENTER
+                                                )
+                                                terminalView.get()?.dispatchKeyEvent(eventDown)
+                                                terminalView.get()?.dispatchKeyEvent(eventUp)
+                                            } else {
+                                                terminalView.get()?.currentSession?.write(text)
+                                                setText("")
+                                            }
+                                            true
+                                        } else {
+                                            false
+                                        }
+                                    }
+                                }
+                            },
+                            update = { editText ->
+                                if (editText.text.toString() != text) {
+                                    editText.setText(text)
+                                    editText.setSelection(text.length)
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        } else {
+            virtualKeysView = WeakReference(null)
+        }
     }
 }
 
@@ -656,11 +787,16 @@ fun SetStatusBarTextColor(isDarkIcons: Boolean) {
 }
 
 
-
+/**
+ * Selectable card for the narrow-screen session drawer.
+ * Supports long-press for renaming.
+ */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SelectableCard(
     selected: Boolean,
     onSelect: () -> Unit,
+    onLongPress: () -> Unit = {},
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     content: @Composable ColumnScope.() -> Unit
@@ -674,7 +810,10 @@ fun SelectableCard(
     )
 
     Card(
-        modifier = modifier,
+        modifier = modifier.combinedClickable(
+            onClick = onSelect,
+            onLongClick = onLongPress
+        ),
         colors = CardDefaults.cardColors(
             containerColor = containerColor,
             contentColor = if (selected) {
@@ -686,8 +825,6 @@ fun SelectableCard(
         elevation = CardDefaults.cardElevation(
             defaultElevation = if (selected) 8.dp else 2.dp
         ),
-        enabled = enabled,
-        onClick = onSelect
     ) {
         Column(
             modifier = Modifier.padding(16.dp)

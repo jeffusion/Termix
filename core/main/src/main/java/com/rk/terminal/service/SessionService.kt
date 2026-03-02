@@ -8,7 +8,6 @@ import android.os.Build
 import android.os.IBinder
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.app.NotificationCompat
 import com.rk.resources.drawables
@@ -20,10 +19,42 @@ import com.termux.terminal.TerminalSession
 import com.termux.terminal.TerminalSessionClient
 
 class SessionService : Service() {
-    private val sessions = hashMapOf<String, TerminalSession>()
-    val sessionList = mutableStateMapOf<String,Int>()
+    private val sessions = linkedMapOf<String, TerminalSession>()
+    // Ordered list of session IDs for UI display
+    val sessionOrder = mutableStateListOf<String>()
+    // Map for storing workingMode per session
+    val sessionList = mutableMapOf<String, Int>()
+    // Observable map for terminal titles - triggers UI recomposition
+    val sessionTitles = androidx.compose.runtime.mutableStateMapOf<String, String>()
+    // Observable map for custom names - triggers UI recomposition
+    val sessionCustomNames = androidx.compose.runtime.mutableStateMapOf<String, String>()
     var currentSession = mutableStateOf(Pair("main",com.rk.settings.Settings.working_Mode))
 
+    /**
+     * Resolve display title with priority chain:
+     * 1. User custom name (if set)
+     * 2. Terminal OSC title (if non-blank)
+     * 3. Fallback to session ID ("main1", etc.)
+     */
+    fun getDisplayTitle(sessionId: String): String {
+        return sessionCustomNames[sessionId]
+            ?: sessionTitles[sessionId]?.takeIf { it.isNotBlank() }
+            ?: sessionId
+    }
+
+    fun updateTerminalTitle(sessionId: String, title: String) {
+        sessionTitles[sessionId] = title
+    }
+
+    fun setCustomName(sessionId: String, name: String) {
+        if (name.isBlank()) {
+            sessionCustomNames.remove(sessionId)
+            com.rk.settings.Settings.removeCustomSessionName(sessionId)
+        } else {
+            sessionCustomNames[sessionId] = name
+            com.rk.settings.Settings.setCustomSessionName(sessionId, name)
+        }
+    }
     inner class SessionBinder : Binder() {
         fun getService():SessionService{
             return this@SessionService
@@ -33,13 +64,22 @@ class SessionService : Service() {
                 it.finishIfRunning()
             }
             sessions.clear()
+            sessionOrder.clear()
             sessionList.clear()
+            sessionTitles.clear()
+            sessionCustomNames.clear()
             updateNotification()
         }
         fun createSession(id: String, client: TerminalSessionClient, activity: MainActivity,workingMode:Int): TerminalSession {
             return MkSession.createSession(activity, client, id, workingMode = workingMode).also {
                 sessions[id] = it
+                sessionOrder.add(id)
                 sessionList[id] = workingMode
+                sessionTitles[id] = ""
+                // Restore persisted custom name if exists
+                com.rk.settings.Settings.getCustomSessionName(id)?.let { name ->
+                    sessionCustomNames[id] = name
+                }
                 updateNotification()
             }
         }
@@ -56,7 +96,11 @@ class SessionService : Service() {
                 }
 
                 sessions.remove(id)
+                sessionOrder.remove(id)
                 sessionList.remove(id)
+                sessionTitles.remove(id)
+                sessionCustomNames.remove(id)
+                com.rk.settings.Settings.removeCustomSessionName(id)
                 if (sessions.isEmpty()) {
                     stopSelf()
                 } else {
@@ -64,6 +108,10 @@ class SessionService : Service() {
                 }
             }.onFailure { it.printStackTrace() }
 
+        }
+
+        fun getSessionId(session: TerminalSession): String? {
+            return sessions.entries.firstOrNull { it.value === session }?.key
         }
     }
 

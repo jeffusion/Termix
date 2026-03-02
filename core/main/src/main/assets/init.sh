@@ -7,8 +7,12 @@ if [ ! -s /etc/resolv.conf ]; then
     echo "nameserver 8.8.8.8" > /etc/resolv.conf
 fi
 
+# Set terminal title using OSC escape sequence
+# OSC 0 sets both icon name and window title
+printf '\033]0;%s\007' "alpine"
 
-export PS1="\[\e[38;5;46m\]\u\[\033[39m\]@reterm \[\033[39m\]\w \[\033[0m\]\\$ "
+# PS1 with terminal title update: \[\e]0;title\a\] sets title on each prompt
+export PS1="\[\e]0;\u@alpine:\w\a\]\[\e[38;5;46m\]\u\[\033[39m\]@reterm \[\033[39m\]\w \[\033[0m\]\\$ "
 # shellcheck disable=SC2034
 export PIP_BREAK_SYSTEM_PACKAGES=1
 required_packages="bash gcompat glib nano"
@@ -36,7 +40,7 @@ fi
 
 if [ "$#" -eq 0 ]; then
     source /etc/profile
-    export PS1="\[\e[38;5;46m\]\u\[\033[39m\]@reterm \[\033[39m\]\w \[\033[0m\]\\$ "
+    export PS1="\[\e]0;\u@alpine:\w\a\]\[\e[38;5;46m\]\u\[\033[39m\]@reterm \[\033[39m\]\w \[\033[0m\]\\$ "
     cd $HOME
     /bin/ash
 else

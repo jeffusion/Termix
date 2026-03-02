@@ -8,7 +8,8 @@ import androidx.appcompat.app.AppCompatDelegate
 import com.rk.libcommons.application
 import com.rk.terminal.ui.screens.settings.WorkingMode
 import com.rk.terminal.ui.screens.settings.InputMode
-
+import com.rk.terminal.ui.screens.settings.LayoutMode
+import com.rk.terminal.ui.screens.settings.CloseLastSessionBehavior
 object Settings {
     //Boolean
     var seccomp
@@ -51,6 +52,13 @@ object Settings {
         get() = Preference.getInt(key = "input_mode", default = InputMode.DEFAULT)
         set(value) = Preference.setInt(key = "input_mode", value)
 
+    var layout_mode
+        get() = Preference.getInt(key = "layout_mode", default = LayoutMode.CLASSIC)
+        set(value) = Preference.setInt(key = "layout_mode", value)
+
+    var close_last_session_behavior
+        get() = Preference.getInt(key = "close_last_session_behavior", default = CloseLastSessionBehavior.EXIT_APP)
+        set(value) = Preference.setInt(key = "close_last_session_behavior", value)
     var custom_background_name
         get() = Preference.getString(key = "custom_bg_name", default = "No Image Selected")
         set(value) = Preference.setString(key = "custom_bg_name",value)
@@ -107,6 +115,18 @@ object Settings {
         Preference.setString(key = action.prefKey, value = binding.serialize())
     }
 
+    fun getCustomSessionName(sessionId: String): String? {
+        val v = Preference.getString("session_name_$sessionId", "")
+        return v.takeIf { it.isNotBlank() }
+    }
+
+    fun setCustomSessionName(sessionId: String, name: String) {
+        Preference.setString("session_name_$sessionId", name)
+    }
+
+    fun removeCustomSessionName(sessionId: String) {
+        Preference.removeKey("session_name_$sessionId")
+    }
 
 
 }
