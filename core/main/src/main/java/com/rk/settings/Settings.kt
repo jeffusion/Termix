@@ -10,6 +10,7 @@ import com.rk.terminal.ui.screens.settings.WorkingMode
 import com.rk.terminal.ui.screens.settings.InputMode
 import com.rk.terminal.ui.screens.settings.LayoutMode
 import com.rk.terminal.ui.screens.settings.CloseLastSessionBehavior
+import com.rk.terminal.ui.screens.settings.ShellType
 object Settings {
     //Boolean
     var amoled
@@ -56,6 +57,10 @@ object Settings {
     var close_last_session_behavior
         get() = Preference.getInt(key = "close_last_session_behavior", default = CloseLastSessionBehavior.EXIT_APP)
         set(value) = Preference.setInt(key = "close_last_session_behavior", value)
+
+    var default_shell
+        get() = Preference.getInt(key = "default_shell", default = ShellType.BASH)
+        set(value) = Preference.setInt(key = "default_shell", value)
     var custom_background_name
         get() = Preference.getString(key = "custom_bg_name", default = "No Image Selected")
         set(value) = Preference.setString(key = "custom_bg_name",value)

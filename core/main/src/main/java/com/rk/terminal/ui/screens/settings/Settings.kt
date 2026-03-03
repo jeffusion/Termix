@@ -87,6 +87,11 @@ object CloseLastSessionBehavior {
     const val EXIT_APP = 0      // Exit the app when last session is closed
     const val NEW_SESSION = 1   // Create a new session instead of exiting
 }
+object ShellType {
+    const val BASH = 0
+    const val ASH = 1
+    const val ZSH = 2
+}
 
 
 
@@ -98,6 +103,7 @@ fun Settings(modifier: Modifier = Modifier,navController: NavController,mainActi
     var selectedInputMode by remember { mutableIntStateOf(Settings.input_mode) }
     var selectedLayoutMode by remember { mutableIntStateOf(Settings.layout_mode) }
     var selectedCloseLastSessionBehavior by remember { mutableIntStateOf(Settings.close_last_session_behavior) }
+    var selectedShellType by remember { mutableIntStateOf(Settings.default_shell) }
     PreferenceLayout(label = stringResource(strings.settings)) {
         PreferenceGroup(heading = stringResource(strings.default_working_mode)) {
 
@@ -156,6 +162,60 @@ fun Settings(modifier: Modifier = Modifier,navController: NavController,mainActi
                 })
         }
 
+
+        PreferenceGroup(heading = stringResource(strings.default_shell)) {
+
+            SettingsCard(
+                title = { Text("Bash") },
+                description = { Text(stringResource(strings.shell_bash_desc)) },
+                startWidget = {
+                    RadioButton(
+                        modifier = Modifier.padding(start = 8.dp),
+                        selected = selectedShellType == ShellType.BASH,
+                        onClick = {
+                            selectedShellType = ShellType.BASH
+                            Settings.default_shell = selectedShellType
+                        })
+                },
+                onClick = {
+                    selectedShellType = ShellType.BASH
+                    Settings.default_shell = selectedShellType
+                })
+
+            SettingsCard(
+                title = { Text("Ash") },
+                description = { Text(stringResource(strings.shell_ash_desc)) },
+                startWidget = {
+                    RadioButton(
+                        modifier = Modifier.padding(start = 8.dp),
+                        selected = selectedShellType == ShellType.ASH,
+                        onClick = {
+                            selectedShellType = ShellType.ASH
+                            Settings.default_shell = selectedShellType
+                        })
+                },
+                onClick = {
+                    selectedShellType = ShellType.ASH
+                    Settings.default_shell = selectedShellType
+                })
+
+            SettingsCard(
+                title = { Text("Zsh") },
+                description = { Text(stringResource(strings.shell_zsh_desc)) },
+                startWidget = {
+                    RadioButton(
+                        modifier = Modifier.padding(start = 8.dp),
+                        selected = selectedShellType == ShellType.ZSH,
+                        onClick = {
+                            selectedShellType = ShellType.ZSH
+                            Settings.default_shell = selectedShellType
+                        })
+                },
+                onClick = {
+                    selectedShellType = ShellType.ZSH
+                    Settings.default_shell = selectedShellType
+                })
+        }
         PreferenceGroup(heading = stringResource(strings.input_mode)) {
 
             SettingsCard(

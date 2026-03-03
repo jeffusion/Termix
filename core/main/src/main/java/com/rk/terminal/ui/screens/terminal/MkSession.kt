@@ -16,6 +16,7 @@ import com.rk.terminal.App.Companion.getTempDir
 import com.rk.terminal.BuildConfig
 import com.rk.terminal.ui.activities.terminal.MainActivity
 import com.rk.terminal.ui.screens.settings.WorkingMode
+import com.rk.terminal.ui.screens.settings.ShellType
 import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TerminalSession
 import com.termux.terminal.TerminalSessionClient
@@ -88,8 +89,13 @@ object MkSession {
             // External loaders from jniLibs conflict with proot's ashmem_memfd extension
             // and fail on Android 10+ due to W^X (Write XOR Execute) policy.
 
-
-
+            // Shell type for Alpine mode
+            val shellPath = when (Settings.default_shell) {
+                ShellType.BASH -> "/bin/bash"
+                ShellType.ZSH -> "/bin/zsh"
+                else -> "/bin/ash"
+            }
+            env.add("RETERM_SHELL=$shellPath")
 
             env.addAll(envVariables.map { "${it.key}=${it.value}" })
 

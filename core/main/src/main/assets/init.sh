@@ -42,7 +42,14 @@ if [ "$#" -eq 0 ]; then
     source /etc/profile
     export PS1="\[\e]0;\u@alpine:\w\a\]\[\e[38;5;46m\]\u\[\033[39m\]@reterm \[\033[39m\]\w \[\033[0m\]\\$ "
     cd $HOME
-    /bin/ash
+    # Use shell from RETERM_SHELL env var, fallback to bash > ash
+    if [ -n "$RETERM_SHELL" ] && [ -x "$RETERM_SHELL" ]; then
+        exec "$RETERM_SHELL"
+    elif [ -x /bin/bash ]; then
+        exec /bin/bash
+    else
+        /bin/ash
+    fi
 else
     exec "$@"
 fi
