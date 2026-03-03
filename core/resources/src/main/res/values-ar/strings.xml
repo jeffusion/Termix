@@ -3,6 +3,12 @@
     <string name="settings">الإعدادات</string>
     <string name="use_shizuku">تسجيل الدخول التلقائي إلى Shizuku</string>
     <string name="use_shizuku_desc">تنفيذ أمر rish تلقائيًا</string>
+    <string name="alpine_root">Alpine (Root)</string>
+    <string name="alpine_root_desc">Alpine Linux مع صلاحيات root حقيقية</string>
+    <string name="default_shell">Shell الافتراضي</string>
+    <string name="shell_bash_desc">GNU Bourne-Again Shell (موصى به)</string>
+    <string name="shell_ash_desc">Shell الافتراضي لـ Alpine (خفيف الوزن)</string>
+    <string name="shell_zsh_desc">Z Shell (يتطلب التثبيت اليدوي: apk add zsh)</string>
     <string name="keyboard_shortcuts">اختصارات لوحة المفاتيح</string>
     <string name="keyboard_shortcuts_desc">تفعيل اختصارات لوحة المفاتيح</string>
     <string name="shortcut_paste">لصق</string>

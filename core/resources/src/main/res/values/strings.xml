@@ -6,6 +6,12 @@
     <string name="default_working_mode">Default Working mode</string>
     <string name="alpine_desc">Alpine Linux</string>
     <string name="android_desc">ReTerminal Android shell</string>
+    <string name="alpine_root">Alpine (Root)</string>
+    <string name="alpine_root_desc">Alpine Linux with real root privileges</string>
+    <string name="default_shell">Default Shell</string>
+    <string name="shell_bash_desc">GNU Bourne-Again Shell (Recommended)</string>
+    <string name="shell_ash_desc">Alpine default shell (lightweight)</string>
+    <string name="shell_zsh_desc">Z Shell (requires manual installation: apk add zsh)</string>
     <string name="customizations">Customizations</string>
     <string name="all_file_access">All file access</string>
     <string name="all_file_access_desc">enable access to /sdcard and /storage</string>

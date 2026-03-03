@@ -6,6 +6,12 @@
     <string name="default_working_mode">默认工作模式</string>
     <string name="alpine_desc">Alpine Linux</string>
     <string name="android_desc">ReTerminal Android Shell</string>
+    <string name="alpine_root">Alpine (Root)</string>
+    <string name="alpine_root_desc">具有真实 Root 权限的 Alpine Linux</string>
+    <string name="default_shell">默认 Shell</string>
+    <string name="shell_bash_desc">GNU Bourne-Again Shell（推荐）</string>
+    <string name="shell_ash_desc">Alpine 默认 shell（轻量级）</string>
+    <string name="shell_zsh_desc">Z Shell（需手动安装：apk add zsh）</string>
     <string name="customizations">自定义</string>
     <string name="all_file_access">完整文件访问</string>
     <string name="all_file_access_desc">启用对 /sdcard 和 /storage 的访问</string>
