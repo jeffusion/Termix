@@ -37,6 +37,7 @@ import com.rk.terminal.ui.routes.MainActivityRoutes
 import com.rk.terminal.ui.screens.terminal.TerminalScreen
 import com.rk.terminal.ui.screens.terminal.terminalView
 import com.rk.terminal.ui.theme.KarbonTheme
+import com.rk.terminal.ui.theme.colorscheme.ColorSchemeManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
@@ -54,8 +55,13 @@ class MainActivity : ComponentActivity() {
 
             lifecycleScope.launch(Dispatchers.Main){
                 setContent {
-                    KarbonTheme {
-                        Surface {
+                    // Read color scheme state at the ROOT of the Compose tree
+                    // Using 'by' delegate ensures Compose subscribes to changes
+                    // and triggers recomposition of the entire tree when scheme changes
+                    val currentColorScheme by ColorSchemeManager.currentScheme
+                    
+                    KarbonTheme(terminalColorScheme = currentColorScheme) {
+                        Surface(modifier = Modifier.fillMaxSize()) {
                             val navController = rememberNavController()
                             MainActivityNavHost(navController = navController, mainActivity = this@MainActivity)
 

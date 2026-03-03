@@ -11,13 +11,15 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import com.rk.libcommons.isDarkMode
 import com.rk.settings.Settings
+import com.rk.terminal.ui.theme.colorscheme.ColorSchemeManager
+import com.rk.terminal.ui.theme.colorscheme.TerminalColorScheme
 
 /*
  * More Themes
@@ -105,33 +107,60 @@ fun KarbonTheme(
     },
     highContrastDarkTheme: Boolean = Settings.amoled,
     dynamicColor: Boolean = Settings.monet,
+    terminalColorScheme: TerminalColorScheme = ColorSchemeManager.currentScheme.value,
     content: @Composable () -> Unit,
 ) {
-    val colorScheme =
-        when {
-            dynamicColor && supportsDynamicTheming() -> {
-                val context = LocalContext.current
-                when {
-                    darkTheme && highContrastDarkTheme ->
-                        dynamicDarkColorScheme(context)
-                            .copy(background = Color.Black, surface = Color.Black)
-                    darkTheme -> dynamicDarkColorScheme(context)
-                    else -> dynamicLightColorScheme(context)
-                }
+    val hasCustomScheme = terminalColorScheme.id != "default"
+    
+    val colorScheme = when {
+        // If user selected a custom terminal color scheme, use it (overrides Monet)
+        hasCustomScheme -> {
+            val baseScheme = ColorSchemeManager.generateMaterial3ColorScheme(terminalColorScheme)
+            when {
+                highContrastDarkTheme && terminalColorScheme.isDark ->
+                    baseScheme.copy(background = Color.Black, surface = Color.Black)
+                else -> baseScheme
             }
-
-            darkTheme && highContrastDarkTheme ->
-                DarkColorScheme.copy(background = Color.Black, surface = Color.Black)
-            darkTheme -> DarkColorScheme
-            else -> LightColorScheme
         }
+
+        // Dynamic Monet colors (only if no custom scheme selected)
+        dynamicColor && supportsDynamicTheming() -> {
+            val context = LocalContext.current
+            when {
+                darkTheme && highContrastDarkTheme ->
+                    dynamicDarkColorScheme(context)
+                        .copy(background = Color.Black, surface = Color.Black)
+                darkTheme -> dynamicDarkColorScheme(context)
+                else -> dynamicLightColorScheme(context)
+            }
+        }
+
+        // Fallback to built-in color schemes
+        darkTheme && highContrastDarkTheme ->
+            DarkColorScheme.copy(background = Color.Black, surface = Color.Black)
+        darkTheme -> DarkColorScheme
+        else -> LightColorScheme
+    }
+    
+    // Determine if we should use light status bar icons
+    val useLightStatusBar = if (hasCustomScheme) {
+        !terminalColorScheme.isDark
+    } else {
+        !darkTheme
+    }
+    
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             (view.context as Activity).apply {
+                // CRITICAL: Programmatically set the window background color
+                // This overrides the XML theme's android:colorBackground
+                // Without this, enableEdgeToEdge() shows the XML theme background
+                window.decorView.setBackgroundColor(colorScheme.background.toArgb())
+                
                 WindowCompat.getInsetsController(window, window.decorView).apply {
-                    isAppearanceLightStatusBars = !darkTheme
-                    isAppearanceLightNavigationBars = !darkTheme
+                    isAppearanceLightStatusBars = useLightStatusBar
+                    isAppearanceLightNavigationBars = useLightStatusBar
                 }
             }
         }

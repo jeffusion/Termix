@@ -15,6 +15,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -105,6 +106,7 @@ import com.rk.terminal.ui.screens.terminal.virtualkeys.VirtualKeysListener
 import com.rk.terminal.ui.screens.terminal.virtualkeys.VirtualKeysView
 import com.termux.terminal.TerminalColors
 import com.termux.view.TerminalView
+import com.rk.terminal.ui.theme.colorscheme.ColorSchemeManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -187,8 +189,9 @@ fun TerminalScreen(
                         )
                     }
 
-                buttonTextColor = getViewColor()
-
+                // Use color scheme foreground for virtual keys
+                val scheme = ColorSchemeManager.getCurrentScheme()
+                buttonTextColor = scheme.foreground
 
                 reload(
                     VirtualKeysInfo(
@@ -201,12 +204,7 @@ fun TerminalScreen(
 
             terminalView.get()?.apply {
                 onScreenUpdated()
-
-
-                mEmulator?.mColors?.mCurrentColors?.apply {
-                    set(256, getViewColor())
-                    set(258, getViewColor())
-                }
+                // Colors are managed by ColorSchemeManager
             }
         }
 
@@ -491,7 +489,11 @@ fun TerminalContent(
     openDrawer: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.TopStart) {
+    Box(
+        modifier = modifier
+            .fillMaxSize(),
+        contentAlignment = Alignment.TopStart
+    ) {
         BackgroundImage()
         val color = getComposeColor()
         Column {
@@ -567,7 +569,11 @@ fun TabBarTerminalContent(
     mainActivityActivity: MainActivity,
     modifier: Modifier = Modifier
 ) {
-    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.TopStart) {
+    Box(
+        modifier = modifier
+            .fillMaxSize(),
+        contentAlignment = Alignment.TopStart
+    ) {
         BackgroundImage()
         TerminalPaneContent(
             mainActivityActivity = mainActivityActivity,
@@ -585,6 +591,10 @@ private fun TerminalPaneContent(
     mainActivityActivity: MainActivity,
     modifier: Modifier = Modifier
 ) {
+    // Observe color scheme state to trigger recomposition when it changes
+    val currentScheme = ColorSchemeManager.currentScheme.value
+    val terminalBackgroundColor = currentScheme.background
+    
     Column(modifier = modifier) {
         AndroidView(
             factory = { context ->
@@ -617,8 +627,7 @@ private fun TerminalPaneContent(
                             ?: mainActivityActivity.sessionBinder!!.createSession(
                                 mainActivityActivity.sessionBinder!!.getService().currentSession.value.first,
                                 client,
-                                mainActivityActivity,
-                                workingMode = Settings.working_Mode
+                                mainActivityActivity, workingMode = Settings.working_Mode
                             )
                     }
 
@@ -628,17 +637,28 @@ private fun TerminalPaneContent(
                     setTypeface(font)
 
                     post {
-                        val color = getViewColor()
-
+                        // Apply the saved color scheme
+                        ColorSchemeManager.setTerminalView(this)
+                        ColorSchemeManager.applyCurrentSchemeToTerminal()
+                        
+                        // Get the current scheme and apply background color directly
+                        val scheme = ColorSchemeManager.getCurrentScheme()
+                        // If a background image is set, make terminal view transparent
+                        // so the image shows through; otherwise use scheme background
+                        if (bitmap.value != null) {
+                            setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                        } else {
+                            setBackgroundColor(scheme.background)
+                        }
+                        
+                        // Update darkText based on scheme
+                        darkText.value = !scheme.isDark
+                        
                         keepScreenOn = true
                         requestFocus()
                         isFocusableInTouchMode = true
-
-                        mEmulator?.mColors?.mCurrentColors?.apply {
-                            set(256, color)
-                            set(258, color)
-                        }
-
+                        
+                        // Legacy colors.properties support (can override scheme)
                         val colorsFile = localDir().child("colors.properties")
                         if (colorsFile.exists() && colorsFile.isFile) {
                             val props = Properties()
@@ -646,6 +666,7 @@ private fun TerminalPaneContent(
                                 props.load(input)
                             }
                             TerminalColors.COLOR_SCHEME.updateWith(props)
+                            mEmulator?.mColors?.reset()
                         }
                     }
                 }
@@ -654,12 +675,27 @@ private fun TerminalPaneContent(
                 .fillMaxWidth()
                 .weight(1f),
             update = { terminalView ->
+                // Apply color scheme background - this runs when currentScheme changes
+                // If a background image is set, make terminal view transparent
+                // so the image shows through; otherwise use scheme background
+                if (bitmap.value != null) {
+                    terminalView.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                } else {
+                    terminalView.setBackgroundColor(terminalBackgroundColor)
+                }
+                terminalView.mEmulator?.mColors?.reset()
                 terminalView.onScreenUpdated()
-                val color = getViewColor()
-
-                terminalView.mEmulator?.mColors?.mCurrentColors?.apply {
-                    set(256, color)
-                    set(258, color)
+                
+                // Update darkText based on scheme
+                darkText.value = !currentScheme.isDark
+                
+                // Handle custom background image text color adjustment
+                if (bitmap.value != null) {
+                    val color = getViewColor()
+                    terminalView.mEmulator?.mColors?.mCurrentColors?.apply {
+                        set(256, color)
+                        set(258, color)
+                    }
                 }
             },
         )
@@ -849,21 +885,24 @@ fun changeSession(mainActivityActivity: MainActivity, session_id: String) {
         attachSession(session)
         setTerminalViewClient(client)
         post {
-            val typedValue = TypedValue()
-
-            context.theme.resolveAttribute(
-                R.attr.colorOnSurface,
-                typedValue,
-                true
-            )
+            // Apply color scheme to this session
+            val scheme = ColorSchemeManager.getCurrentScheme()
+            // If a background image is set, make terminal view transparent
+            if (bitmap.value != null) {
+                setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            } else {
+                setBackgroundColor(scheme.background)
+            }
+            
+            // Update terminal colors
+            mEmulator?.mColors?.reset()
+            
+            // Update darkText based on scheme
+            darkText.value = !scheme.isDark
+            
             keepScreenOn = true
             requestFocus()
             isFocusableInTouchMode = true
-
-            mEmulator?.mColors?.mCurrentColors?.apply {
-                set(256, typedValue.data)
-                set(258, typedValue.data)
-            }
         }
         virtualKeysView.get()?.apply {
             virtualKeysViewClient =
