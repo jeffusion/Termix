@@ -56,6 +56,13 @@ object MkSession {
                 }
             }
 
+            localBinDir().child("init-root").apply {
+                if (exists().not()){
+                    createFileIfNot()
+                    writeText(assets.open("init-root.sh").bufferedReader().use { it.readText() })
+                }
+            }
+
 
             val env = mutableListOf(
                 "PATH=${System.getenv("PATH")}:/sbin:${localBinDir().absolutePath}",
@@ -105,10 +112,10 @@ object MkSession {
             val args: Array<String>
 
             val shell = if (pendingCommand == null) {
-                args = if (workingMode == WorkingMode.ALPINE){
-                    arrayOf("-c",initFile.absolutePath)
-                }else{
-                    arrayOf()
+                args = when (workingMode) {
+                    WorkingMode.ALPINE -> arrayOf("-c", initFile.absolutePath)
+                    WorkingMode.ALPINE_ROOT -> arrayOf("-c", localBinDir().child("init-root").absolutePath)
+                    else -> arrayOf()
                 }
                 "/system/bin/sh"
             } else{

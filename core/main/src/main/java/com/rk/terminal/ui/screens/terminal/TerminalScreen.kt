@@ -301,8 +301,16 @@ fun TerminalScreen(
                             createNewSession(workingMode = WorkingMode.ANDROID)
                             showAddDialog = false
                         })
-                }
+
+                    SettingsCard(
+                        title = { Text(stringResource(strings.alpine_root)) },
+                        description = {Text(stringResource(strings.alpine_root_desc))},
+                        onClick = {
+                            createNewSession(workingMode = WorkingMode.ALPINE_ROOT)
+                            showAddDialog = false
+                        })
             }
+        }
         }
 
         // Rename session dialog
@@ -500,8 +508,9 @@ fun TerminalContent(
 
             fun getNameOfWorkingMode(workingMode: Int?): String {
                 return when (workingMode) {
-                    0 -> "ALPINE".lowercase()
-                    1 -> "ANDROID".lowercase()
+                    WorkingMode.ALPINE -> "alpine"
+                    WorkingMode.ANDROID -> "android"
+                    WorkingMode.ALPINE_ROOT -> "alpine (root)"
                     null -> "null"
                     else -> "unknown"
                 }

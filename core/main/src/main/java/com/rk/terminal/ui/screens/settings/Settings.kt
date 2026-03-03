@@ -70,6 +70,7 @@ fun SettingsCard(
 object WorkingMode{
     const val ALPINE = 0
     const val ANDROID = 1
+    const val ALPINE_ROOT = 2
 }
 
 object InputMode {
@@ -134,6 +135,23 @@ fun Settings(modifier: Modifier = Modifier,navController: NavController,mainActi
                 },
                 onClick = {
                     selectedOption = WorkingMode.ANDROID
+                    Settings.working_Mode = selectedOption
+                })
+
+            SettingsCard(
+                title = { Text(stringResource(strings.alpine_root)) },
+                description = {Text(stringResource(strings.alpine_root_desc))},
+                startWidget = {
+                    RadioButton(
+                        modifier = Modifier.padding(start = 8.dp),
+                        selected = selectedOption == WorkingMode.ALPINE_ROOT,
+                        onClick = {
+                            selectedOption = WorkingMode.ALPINE_ROOT
+                            Settings.working_Mode = selectedOption
+                        })
+                },
+                onClick = {
+                    selectedOption = WorkingMode.ALPINE_ROOT
                     Settings.working_Mode = selectedOption
                 })
         }
