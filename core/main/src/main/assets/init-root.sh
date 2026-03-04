@@ -46,18 +46,6 @@ ARGS="$ARGS -b /sys"
 ARGS="$ARGS -b /dev/urandom:/dev/random"
 ARGS="$ARGS -b /proc"
 
-if [ -e "/proc/self/fd/0" ]; then
-  ARGS="$ARGS -b /proc/self/fd/0:/dev/stdin"
-fi
-
-if [ -e "/proc/self/fd/1" ]; then
-  ARGS="$ARGS -b /proc/self/fd/1:/dev/stdout"
-fi
-
-if [ -e "/proc/self/fd/2" ]; then
-  ARGS="$ARGS -b /proc/self/fd/2:/dev/stderr"
-fi
-
 if [ ! -d "$ALPINE_DIR/tmp" ]; then
  mkdir -p "$ALPINE_DIR/tmp"
  chmod 1777 "$ALPINE_DIR/tmp"
@@ -75,4 +63,8 @@ ARGS="$ARGS -L"
 # 1. Run proot directly without $LINKER (root has full execution permissions)
 # 2. Don't set PROOT_LOADER* variables (those are for unprivileged proot)
 # 3. Set LD_LIBRARY_PATH for proot's dependencies
+# Note: /dev/stdin,stdout,stderr bindings are omitted for root mode because
+#   su changes the process context, causing proot's realpath() on /proc/self/fd/*
+#   to fail. These are unnecessary anyway since -b /dev and -b /proc already
+#   provide /dev/stdin -> /proc/self/fd/0 mapping in the guest.
 su -c "mkdir -p $PROOT_TMP_DIR && export LD_LIBRARY_PATH=$LIB_DIR && export PROOT_TMP_DIR=$PROOT_TMP_DIR && export TERM=xterm-256color && export LANG=C.UTF-8 && export HOME=/root && $PROOT_BIN $ARGS sh $INIT_BIN"
