@@ -443,6 +443,7 @@ fun Customization(modifier: Modifier = Modifier) {
                     shortcutsEnabled = it
                 })
 
+
             for (action in ShortcutAction.entries) {
                 val binding = Settings.getShortcutBinding(action)
                 val labelRes = when (action) {
@@ -476,6 +477,34 @@ fun Customization(modifier: Modifier = Modifier) {
                     onConfirm = { binding ->
                         Settings.setShortcutBinding(showCaptureFor!!, binding)
                         showCaptureFor = null
+                    },
+                )
+            }
+
+            // Number shortcut modifier — user records a key combo, only modifier flags are used
+            var numberBinding by remember { mutableStateOf(Settings.getNumberShortcutBinding()) }
+            var showNumberCapture by remember { mutableStateOf(false) }
+
+            SettingsToggle(
+                isEnabled = shortcutsEnabled,
+                label = stringResource(strings.shortcut_switch_by_number),
+                description = "${stringResource(strings.shortcut_switch_by_number_desc)} (${numberBinding.toModifierDisplayString()})",
+                showSwitch = false,
+                default = false,
+                sideEffect = { showNumberCapture = true },
+            )
+
+            if (showNumberCapture) {
+                ShortcutCaptureDialog(
+                    action = ShortcutAction.PASTE, // dummy — dialog only captures keys
+                    onDismiss = { showNumberCapture = false },
+                    onConfirm = { binding ->
+                        // Only store modifier flags; require at least one modifier
+                        if (binding.ctrl || binding.shift || binding.alt) {
+                            Settings.setNumberShortcutBinding(binding)
+                            numberBinding = binding
+                        }
+                        showNumberCapture = false
                     },
                 )
             }

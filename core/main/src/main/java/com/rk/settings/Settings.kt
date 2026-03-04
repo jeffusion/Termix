@@ -108,6 +108,18 @@ object Settings {
         get() = Preference.getBoolean(key = "shortcuts_enabled", default = true)
         set(value) = Preference.setBoolean(key = "shortcuts_enabled", value)
 
+    /** Default modifier for number shortcuts: Alt+1 (only modifier flags are used) */
+    private val DEFAULT_NUMBER_SHORTCUT = com.rk.terminal.ui.screens.terminal.ShortcutBinding(alt = true, keyCode = android.view.KeyEvent.KEYCODE_1)
+
+    fun getNumberShortcutBinding(): com.rk.terminal.ui.screens.terminal.ShortcutBinding {
+        val raw = Preference.getString(key = "number_shortcut_modifier", default = DEFAULT_NUMBER_SHORTCUT.serialize())
+        return com.rk.terminal.ui.screens.terminal.ShortcutBinding.deserialize(raw)
+    }
+
+    fun setNumberShortcutBinding(binding: com.rk.terminal.ui.screens.terminal.ShortcutBinding) {
+        Preference.setString(key = "number_shortcut_modifier", value = binding.serialize())
+    }
+
     // Terminal color scheme
     var terminal_color_scheme
         get() = Preference.getString(key = "terminal_color_scheme", default = "default")
@@ -137,6 +149,7 @@ object Settings {
 
 
 }
+
 
 object Preference {
     private var sharedPreferences: SharedPreferences = application!!.getSharedPreferences("Settings", Context.MODE_PRIVATE)

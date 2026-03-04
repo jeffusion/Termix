@@ -51,6 +51,15 @@ data class ShortcutBinding(
         return parts.joinToString(" + ")
     }
 
+    /** Human-readable display of modifier keys only (for number shortcut config) */
+    fun toModifierDisplayString(): String {
+        val parts = mutableListOf<String>()
+        if (ctrl) parts.add("Ctrl")
+        if (shift) parts.add("Shift")
+        if (alt) parts.add("Alt")
+        return if (parts.isEmpty()) "Not set" else parts.joinToString(" + ") + " + 1–9"
+    }
+
     companion object {
         /** Deserialize from SharedPreferences string */
         fun deserialize(value: String): ShortcutBinding {

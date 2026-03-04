@@ -90,7 +90,7 @@ fun SessionTabBar(
                     .horizontalScroll(scrollState),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                sessions.forEach { sessionId ->
+                sessions.forEachIndexed { index, sessionId ->
                     val selected = sessionId == currentSessionId
 
                     // Tab item with fixed width
@@ -115,7 +115,33 @@ fun SessionTabBar(
                             modifier = Modifier.fillMaxHeight(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Title text with fixed space for close button
+                            // Session number badge (1-indexed, show for first 9)
+                            if (index < 9) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(18.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(
+                                            if (selected)
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                            else
+                                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "${index + 1}",
+                                        maxLines = 1,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = if (selected)
+                                            MaterialTheme.colorScheme.primary
+                                        else
+                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(6.dp))
+                            }
+
                             Text(
                                 text = getDisplayTitle(sessionId),
                                 maxLines = 1,

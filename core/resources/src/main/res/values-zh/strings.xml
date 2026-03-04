@@ -84,4 +84,6 @@
     <string name="close_last_session_new_desc">创建新会话而不是退出</string>
     <string name="color_scheme">配色方案</string>
     <string name="color_scheme_desc">终端和应用程序配色主题</string>
+    <string name="shortcut_switch_by_number">数字键快速切换</string>
+    <string name="shortcut_switch_by_number_desc">按修饰键 + 1–9 切换到对应会话</string>
 </resources>

@@ -84,4 +84,6 @@
     <string name="close_last_session_new_desc">Create a new session instead of exiting</string>
     <string name="color_scheme">Color Scheme</string>
     <string name="color_scheme_desc">Terminal and app color theme</string>
+    <string name="shortcut_switch_by_number">Quick Switch by Number</string>
+    <string name="shortcut_switch_by_number_desc">Switch to session N with modifier + 1–9</string>
 </resources>

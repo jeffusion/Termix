@@ -18,6 +18,11 @@ object KeyShortcutHandler {
     fun handle(keyCode: Int, event: KeyEvent, activity: MainActivity): Boolean {
         if (!Settings.shortcuts_enabled) return false
 
+        val numberIndex = getNumberKeyIndex(keyCode)
+        if (numberIndex != null && matchesNumberModifier(event)) {
+            return handleSwitchToSession(activity, numberIndex)
+        }
+
         // Try each action's binding
         for (action in ShortcutAction.entries) {
             val binding = Settings.getShortcutBinding(action)
@@ -114,6 +119,52 @@ object KeyShortcutHandler {
         }
 
         changeSession(activity, session_id = sessionKeys[nextIndex])
+        return true
+    }
+
+    private fun getNumberKeyIndex(keyCode: Int): Int? {
+        return when (keyCode) {
+            KeyEvent.KEYCODE_1 -> 0
+            KeyEvent.KEYCODE_2 -> 1
+            KeyEvent.KEYCODE_3 -> 2
+            KeyEvent.KEYCODE_4 -> 3
+            KeyEvent.KEYCODE_5 -> 4
+            KeyEvent.KEYCODE_6 -> 5
+            KeyEvent.KEYCODE_7 -> 6
+            KeyEvent.KEYCODE_8 -> 7
+            KeyEvent.KEYCODE_9 -> 8
+            else -> null
+        }
+    }
+
+    /**
+     * Checks if the current KeyEvent's modifiers match the user-configured
+     * number shortcut binding (only modifier flags are compared).
+     */
+    private fun matchesNumberModifier(event: KeyEvent): Boolean {
+        val binding = Settings.getNumberShortcutBinding()
+        if (binding.isEmpty) return false
+        return event.isCtrlPressed == binding.ctrl
+                && event.isShiftPressed == binding.shift
+                && event.isAltPressed == binding.alt
+    }
+
+    private fun handleSwitchToSession(activity: MainActivity, index: Int): Boolean {
+        val binder = activity.sessionBinder ?: return true
+        val service = binder.getService()
+        val sessionKeys = service.sessionOrder.toList()
+
+        if (sessionKeys.isEmpty()) return true
+
+        // Strict: only respond if index is within current session count
+        if (index >= sessionKeys.size) return true
+
+        val targetId = sessionKeys[index]
+
+        val currentId = service.currentSession.value.first
+        if (targetId != currentId) {
+            changeSession(activity, session_id = targetId)
+        }
         return true
     }
 

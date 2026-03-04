@@ -46,4 +46,6 @@
     <string name="close_last_session_new_desc">إنشاء جلسة جديدة بدلاً من الإنهاء</string>
     <string name="color_scheme">نظام الألوان</string>
     <string name="color_scheme_desc">سمة ألوان الطرفية والتطبيق</string>
+    <string name="shortcut_switch_by_number">التبديل السريع بالرقم</string>
+    <string name="shortcut_switch_by_number_desc">التبديل إلى الجلسة N بالمعدِّل + 1–9</string>
 </resources>
