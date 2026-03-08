@@ -30,7 +30,9 @@ import java.io.FileOutputStream
 
 class TerminalBackEnd(val terminal: TerminalView,val activity: MainActivity) : TerminalViewClient, TerminalSessionClient {
     override fun onTextChanged(changedSession: TerminalSession) {
-        terminal.onScreenUpdated()
+        if (terminal.currentSession == changedSession) {
+            terminal.onScreenUpdated()
+        }
     }
     
     override fun onTitleChanged(changedSession: TerminalSession) {

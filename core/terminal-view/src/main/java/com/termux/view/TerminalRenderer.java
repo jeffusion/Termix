@@ -206,10 +206,25 @@ public final class TerminalRenderer {
             savedMatrix = true;
         }
 
+        // Standard cell background bounds (same as upstream Termux).
+        float cellTop = y - mFontLineSpacingAndAscent + mFontAscent;
+        float cellBottom = y;
+
         if (backColor != palette[TextStyle.COLOR_INDEX_BACKGROUND]) {
-            // Only draw non-default background.
+            // Draw standard cell background.
             mTextPaint.setColor(backColor);
-            canvas.drawRect(left, rowBgTop, right, rowBgBottom, mTextPaint);
+            canvas.drawRect(left, cellTop, right, cellBottom, mTextPaint);
+
+            // Extend into row margins (first row top / last row bottom) ONLY for
+            // non-cursor runs, to fill the TUI gap without stretching the cursor.
+            if (cursor == 0) {
+                if (rowBgTop < cellTop) {
+                    canvas.drawRect(left, rowBgTop, right, cellTop, mTextPaint);
+                }
+                if (rowBgBottom > cellBottom) {
+                    canvas.drawRect(left, cellBottom, right, rowBgBottom, mTextPaint);
+                }
+            }
         }
 
         if (cursor != 0) {

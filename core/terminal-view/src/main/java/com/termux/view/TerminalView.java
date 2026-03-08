@@ -66,6 +66,9 @@ public final class TerminalView extends View {
     public static final int TERMINAL_CURSOR_BLINK_RATE_MIN = 100;
     public static final int TERMINAL_CURSOR_BLINK_RATE_MAX = 2000;
 
+    /** Whether a screen update has been posted but not yet executed. Used to coalesce rapid updates. */
+    private boolean mScreenUpdatePending;
+
     /** The top row of text to display. Ranges from -activeTranscriptRows to 0. */
     int mTopRow;
     int[] mDefaultSelectors = new int[]{-1,-1,-1,-1};
@@ -461,6 +464,23 @@ public final class TerminalView extends View {
     public void onScreenUpdated(boolean skipScrolling) {
         if (mEmulator == null) return;
 
+        onScreenUpdatedInternal(skipScrolling);
+
+        // Coalesce rapid invalidations: only post one invalidate per VSYNC frame.
+        // View.postOnAnimation() schedules the runnable on the next Choreographer frame,
+        // so all onScreenUpdated() calls within the same ~16ms window share one redraw.
+        if (!mScreenUpdatePending) {
+            mScreenUpdatePending = true;
+            postOnAnimation(() -> {
+                mScreenUpdatePending = false;
+                invalidate();
+                if (mAccessibilityEnabled) setContentDescription(getText());
+            });
+        }
+    }
+
+    /** Process scroll logic without triggering invalidation. */
+    private void onScreenUpdatedInternal(boolean skipScrolling) {
         int rowsInHistory = mEmulator.getScreen().getActiveTranscriptRows();
         if (mTopRow < -rowsInHistory) mTopRow = -rowsInHistory;
 
@@ -497,9 +517,6 @@ public final class TerminalView extends View {
         }
 
         mEmulator.clearScrollCounter();
-
-        invalidate();
-        if (mAccessibilityEnabled) setContentDescription(getText());
     }
 
     /** This must be called by the hosting activity in {@link Activity#onContextMenuClosed(Menu)}
