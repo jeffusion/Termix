@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -189,6 +190,46 @@ fun Settings(modifier: Modifier = Modifier,navController: NavController,mainActi
                     steps = (max_text_size - min_text_size).toInt() - 1,
                     valueRange = min_text_size..max_text_size,
                 )
+            }
+        }
+
+        // -- Scrollback Lines --
+        PreferenceGroup {
+            val scrollbackSteps = remember {
+                listOf(500, 1000, 2000, 3000, 5000, 8000, 10000, 20000, 50000)
+            }
+            val savedValue = Settings.scrollback_lines
+            val initialIndex = remember {
+                scrollbackSteps.indexOfFirst { it >= savedValue }
+                    .let { if (it == -1) scrollbackSteps.lastIndex else it }
+            }
+            var sliderIndex by remember { mutableFloatStateOf(initialIndex.toFloat()) }
+            val currentValue = scrollbackSteps[sliderIndex.roundToInt().coerceIn(0, scrollbackSteps.lastIndex)]
+            PreferenceTemplate(title = { Text(stringResource(strings.scrollback_lines)) }) {
+                Text(
+                    if (currentValue >= 1000) "${currentValue / 1000}K" else currentValue.toString(),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+            PreferenceTemplate(title = {}) {
+                Slider(
+                    modifier = modifier,
+                    value = sliderIndex,
+                    onValueChange = {
+                        sliderIndex = it
+                        Settings.scrollback_lines = scrollbackSteps[it.roundToInt().coerceIn(0, scrollbackSteps.lastIndex)]
+                    },
+                    steps = scrollbackSteps.size - 2,
+                    valueRange = 0f..(scrollbackSteps.size - 1).toFloat(),
+                )
+            }
+            // Min / Max labels
+            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                Text("500", style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(modifier = Modifier.weight(1f))
+                Text("50K", style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 

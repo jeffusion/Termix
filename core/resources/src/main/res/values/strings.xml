@@ -16,6 +16,7 @@
     <string name="all_file_access">All file access</string>
     <string name="all_file_access_desc">enable access to /sdcard and /storage</string>
     <string name="text_size">Text Size</string>
+    <string name="scrollback_lines">Scrollback Lines</string>
     <string name="font_hint">Only monospaced fonts are supported. Non-monospaced fonts may not render correctly.</string>
     <string name="no_font_selected">No Font Selected</string>
     <string name="custom_font">Custom Font</string>

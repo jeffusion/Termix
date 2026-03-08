@@ -16,6 +16,7 @@
     <string name="all_file_access">完整文件访问</string>
     <string name="all_file_access_desc">启用对 /sdcard 和 /storage 的访问</string>
     <string name="text_size">文字大小</string>
+    <string name="scrollback_lines">回滚行数</string>
     <string name="font_hint">仅支持等宽字体，非等宽字体可能无法正确渲染。</string>
     <string name="no_font_selected">未选择字体</string>
     <string name="custom_font">自定义字体</string>

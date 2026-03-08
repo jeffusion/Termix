@@ -135,7 +135,7 @@ object MkSession {
                 workingDir,
                 args,
                 env.toTypedArray(),
-                TerminalEmulator.DEFAULT_TERMINAL_TRANSCRIPT_ROWS,
+                Settings.scrollback_lines,
                 sessionClient,
             )
         }

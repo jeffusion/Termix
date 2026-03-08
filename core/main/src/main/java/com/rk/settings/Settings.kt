@@ -38,6 +38,10 @@ object Settings {
         get() = Preference.getInt(key = "terminal_font_size", default = 13)
         set(value) = Preference.setInt(key = "terminal_font_size",value)
 
+    var scrollback_lines
+        get() = Preference.getInt(key = "scrollback_lines", default = 2000)
+        set(value) = Preference.setInt(key = "scrollback_lines",value)
+
     var wallTransparency
         get() = Preference.getFloat(key = "wallTransparency", default = 0f)
         set(value) = Preference.setFloat(key = "wallTransparency",value)
