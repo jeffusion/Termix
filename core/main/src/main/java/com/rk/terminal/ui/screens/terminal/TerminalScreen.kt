@@ -1,6 +1,5 @@
 package com.rk.terminal.ui.screens.terminal
 
-import android.app.Activity
 import android.content.res.Configuration
 import android.graphics.BitmapFactory
 import android.graphics.Color
@@ -14,7 +13,6 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
@@ -57,7 +55,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -71,17 +68,14 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
-import androidx.core.view.WindowCompat
 import androidx.core.widget.doOnTextChanged
 import androidx.navigation.NavController
 import com.google.android.material.R
@@ -109,6 +103,7 @@ import com.rk.terminal.ui.screens.terminal.virtualkeys.VirtualKeysView
 import com.termux.terminal.TerminalColors
 import com.termux.view.TerminalView
 import com.rk.terminal.ui.theme.colorscheme.ColorSchemeManager
+import com.rk.terminal.ui.theme.colorscheme.TerminalColorScheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -154,6 +149,43 @@ inline fun getComposeColor():androidx.compose.ui.graphics.Color{
     }
 }
 
+private fun resolveDarkTextForTerminalSurface(scheme: TerminalColorScheme): Boolean {
+    return if (bitmap.value != null) {
+        Settings.blackTextColor
+    } else {
+        ColorSchemeManager.shouldUseDarkUiText(scheme)
+    }
+}
+
+private fun applyLegacyColorOverrides(terminalView: TerminalView, baseScheme: TerminalColorScheme) {
+    val colorsFile = localDir().child("colors.properties")
+    if (!colorsFile.exists() || !colorsFile.isFile) {
+        return
+    }
+
+    val props = runCatching {
+        Properties().also { loadedProps ->
+            FileInputStream(colorsFile).use { input ->
+                loadedProps.load(input)
+            }
+        }
+    }.getOrNull() ?: return
+
+    TerminalColors.COLOR_SCHEME.updateWith(props)
+    terminalView.mEmulator?.mColors?.reset()
+
+    val overriddenBackground = props.getProperty("background")
+        ?.let { colorHex -> runCatching { TerminalColorScheme.parseHexColor(colorHex) }.getOrNull() }
+
+    if (bitmap.value == null) {
+        val effectiveBackground = overriddenBackground ?: baseScheme.background
+        terminalView.setBackgroundColor(effectiveBackground)
+        darkText.value = ColorSchemeManager.shouldUseDarkUiText(
+            baseScheme.copy(background = effectiveBackground)
+        )
+    }
+}
+
 var showToolbar = mutableStateOf(Settings.toolbar)
 var showVirtualKeys = mutableStateOf(Settings.virtualKeys)
 var showHorizontalToolbar = mutableStateOf(Settings.toolbar)
@@ -167,14 +199,13 @@ fun TerminalScreen(
     navController: NavController
 ) {
     val context = LocalContext.current
-    val isDarkMode = isSystemInDarkTheme()
     val scope = rememberCoroutineScope()
 
 
     LaunchedEffect(Unit){
         withContext(Dispatchers.IO){
             if (context.filesDir.child("background").exists().not()){
-                darkText.value = !isDarkMode
+                darkText.value = resolveDarkTextForTerminalSurface(ColorSchemeManager.getCurrentScheme())
             }else if (bitmap.value == null){
                 val fullBitmap = BitmapFactory.decodeFile(context.filesDir.child("background").absolutePath)?.asImageBitmap()
                 if (fullBitmap != null) bitmap.value = fullBitmap
@@ -191,9 +222,7 @@ fun TerminalScreen(
                         )
                     }
 
-                // Use color scheme foreground for virtual keys
-                val scheme = ColorSchemeManager.getCurrentScheme()
-                buttonTextColor = scheme.foreground
+                buttonTextColor = getViewColor()
 
                 reload(
                     VirtualKeysInfo(
@@ -233,6 +262,15 @@ fun TerminalScreen(
 
         // Helper function to create a new session
         fun createNewSession(workingMode: Int) {
+            if (!Rootfs.isFilesDownloaded(workingMode)) {
+                Settings.working_Mode = workingMode
+                navController.navigate(MainActivityRoutes.MainScreen.route) {
+                    popUpTo(MainActivityRoutes.MainScreen.route) { inclusive = true }
+                    launchSingleTop = true
+                }
+                return
+            }
+
             val sessionId = generateUniqueSessionId()
             terminalView.get()?.let {
                 val client = TerminalBackEnd(it, mainActivityActivity)
@@ -311,6 +349,22 @@ fun TerminalScreen(
                             createNewSession(workingMode = WorkingMode.ALPINE_ROOT)
                             showAddDialog = false
                         })
+
+                    SettingsCard(
+                        title = { Text("Arch") },
+                        description = {Text(stringResource(strings.arch_desc))},
+                        onClick = {
+                            createNewSession(workingMode = WorkingMode.ARCH)
+                            showAddDialog = false
+                        })
+
+                    SettingsCard(
+                        title = { Text(stringResource(strings.arch_root)) },
+                        description = {Text(stringResource(strings.arch_root_desc))},
+                        onClick = {
+                            createNewSession(workingMode = WorkingMode.ARCH_ROOT)
+                            showAddDialog = false
+                        })
             }
         }
         }
@@ -333,7 +387,6 @@ fun TerminalScreen(
         }
 
         if (isTabBarMode) {
-            SetStatusBarTextColor(isDarkIcons = darkText.value)
             Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
                 val service = mainActivityActivity.sessionBinder?.getService()
                 val sessionKeys = service?.sessionOrder?.toList() ?: emptyList()
@@ -365,12 +418,6 @@ fun TerminalScreen(
 
             BackHandler(enabled = drawerState.isOpen) {
                 scope.launch { drawerState.close() }
-            }
-
-            if (drawerState.isClosed) {
-                SetStatusBarTextColor(isDarkIcons = darkText.value)
-            } else {
-                SetStatusBarTextColor(isDarkIcons = !isDarkMode)
             }
 
             ModalNavigationDrawer(
@@ -529,6 +576,7 @@ fun TerminalScreen(
 fun getSessionTextColor(workingMode: Int?): androidx.compose.ui.graphics.Color {
     return when (workingMode) {
         WorkingMode.ALPINE_ROOT -> androidx.compose.ui.graphics.Color(0xFFEF5350)
+        WorkingMode.ARCH_ROOT -> androidx.compose.ui.graphics.Color(0xFFEF5350)
         WorkingMode.ANDROID -> androidx.compose.ui.graphics.Color(0xFFFFA726)
         else -> MaterialTheme.colorScheme.onSurface
     }
@@ -708,22 +756,13 @@ private fun TerminalPaneContent(
                             setBackgroundColor(scheme.background)
                         }
                         
-                        // Update darkText based on scheme
-                        darkText.value = !scheme.isDark
+                        darkText.value = resolveDarkTextForTerminalSurface(scheme)
                         
                         keepScreenOn = true
                         requestFocus()
                         
                         // Legacy colors.properties support (can override scheme)
-                        val colorsFile = localDir().child("colors.properties")
-                        if (colorsFile.exists() && colorsFile.isFile) {
-                            val props = Properties()
-                            FileInputStream(colorsFile).use { input ->
-                                props.load(input)
-                            }
-                            TerminalColors.COLOR_SCHEME.updateWith(props)
-                            mEmulator?.mColors?.reset()
-                        }
+                        applyLegacyColorOverrides(this, scheme)
                     }
                 }
             },
@@ -742,8 +781,9 @@ private fun TerminalPaneContent(
                 terminalView.mEmulator?.mColors?.reset()
                 terminalView.onScreenUpdated()
                 
-                // Update darkText based on scheme
-                darkText.value = !currentScheme.isDark
+                darkText.value = resolveDarkTextForTerminalSurface(currentScheme)
+
+                applyLegacyColorOverrides(terminalView, currentScheme)
                 
                 // Handle custom background image text color adjustment
                 if (bitmap.value != null) {
@@ -758,7 +798,6 @@ private fun TerminalPaneContent(
 
         if (showVirtualKeys.value) {
             val pagerState = rememberPagerState(pageCount = { 2 })
-            val onSurfaceColor = MaterialTheme.colorScheme.onSurface.toArgb()
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier
@@ -777,7 +816,7 @@ private fun TerminalPaneContent(
                                             VirtualKeysListener(it)
                                         }
 
-                                    buttonTextColor = onSurfaceColor
+                                    buttonTextColor = getViewColor()
 
                                     reload(
                                         VirtualKeysInfo(
@@ -790,7 +829,10 @@ private fun TerminalPaneContent(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(75.dp)
+                                .height(75.dp),
+                            update = { keysView ->
+                                keysView.buttonTextColor = getViewColor()
+                            }
                         )
                     }
 
@@ -865,16 +907,6 @@ fun BackgroundImage() {
                 .alpha(wallAlpha)
                 .zIndex(-1f)
         )
-    }
-}
-
-@Composable
-fun SetStatusBarTextColor(isDarkIcons: Boolean) {
-    val view = LocalView.current
-    val window = (view.context as? Activity)?.window ?: return
-
-    SideEffect {
-        WindowCompat.getInsetsController(window, view)?.isAppearanceLightStatusBars = isDarkIcons
     }
 }
 
@@ -953,8 +985,9 @@ fun changeSession(mainActivityActivity: MainActivity, session_id: String) {
             // Update terminal colors
             mEmulator?.mColors?.reset()
             
-            // Update darkText based on scheme
-            darkText.value = !scheme.isDark
+            darkText.value = resolveDarkTextForTerminalSurface(scheme)
+
+            applyLegacyColorOverrides(this, scheme)
             
             keepScreenOn = true
             requestFocus()

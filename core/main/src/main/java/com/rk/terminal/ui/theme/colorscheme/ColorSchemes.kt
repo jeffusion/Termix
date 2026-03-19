@@ -9,12 +9,11 @@ import com.rk.terminal.ui.theme.colorscheme.TerminalColorScheme.Companion.hex
  * Each scheme includes both ANSI 16 colors and special colors (foreground, background, cursor).
  */
 object ColorSchemes {
+
+    private const val DEFAULT_SCHEME_ID = "default"
     
-    /**
-     * Default xterm-like color scheme (matches Termux default).
-     */
-    val Default = TerminalColorScheme(
-        id = "default",
+    private val DefaultDarkTemplate = TerminalColorScheme(
+        id = "default_dark",
         name = "Default",
         isDark = true,
         black = hex("#000000"),
@@ -37,6 +36,38 @@ object ColorSchemes {
         background = hex("#000000"),
         cursor = hex("#ffffff")
     )
+
+    private val DefaultLightTemplate = TerminalColorScheme(
+        id = "default_light",
+        name = "Default",
+        isDark = false,
+        black = hex("#000000"),
+        red = hex("#cd0000"),
+        green = hex("#00cd00"),
+        yellow = hex("#cdcd00"),
+        blue = hex("#005faf"),
+        magenta = hex("#cd00cd"),
+        cyan = hex("#008787"),
+        white = hex("#666666"),
+        brightBlack = hex("#7f7f7f"),
+        brightRed = hex("#ff0000"),
+        brightGreen = hex("#00af00"),
+        brightYellow = hex("#b57614"),
+        brightBlue = hex("#005faf"),
+        brightMagenta = hex("#ff00ff"),
+        brightCyan = hex("#00afaf"),
+        brightWhite = hex("#ffffff"),
+        foreground = hex("#1f1f1f"),
+        background = hex("#ffffff"),
+        cursor = hex("#1f1f1f")
+    )
+
+    val Default = resolveDefaultForAppTheme(isDark = true)
+
+    fun resolveDefaultForAppTheme(isDark: Boolean): TerminalColorScheme {
+        val template = if (isDark) DefaultDarkTemplate else DefaultLightTemplate
+        return template.copy(id = DEFAULT_SCHEME_ID, name = "Default")
+    }
     
     /**
      * Dracula - A dark theme with vibrant colors.

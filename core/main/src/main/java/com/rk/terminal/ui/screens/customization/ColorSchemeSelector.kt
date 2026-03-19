@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,6 +40,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.rk.settings.Settings
 import com.rk.resources.strings
 import com.rk.terminal.ui.theme.colorscheme.ColorSchemeManager
 import com.rk.terminal.ui.theme.colorscheme.ColorSchemes
@@ -53,6 +56,12 @@ fun ColorSchemeSelector(
     onSchemeSelected: (TerminalColorScheme) -> Unit = {}
 ) {
     val currentScheme by ColorSchemeManager.currentScheme
+    val systemDarkTheme = isSystemInDarkTheme()
+    val appDarkTheme = when (Settings.default_night_mode) {
+        AppCompatDelegate.MODE_NIGHT_YES -> true
+        AppCompatDelegate.MODE_NIGHT_NO -> false
+        else -> systemDarkTheme
+    }
     val scrollState = rememberScrollState()
     
     Column(modifier = modifier.fillMaxWidth()) {
@@ -64,8 +73,14 @@ fun ColorSchemeSelector(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             ColorSchemes.all.forEach { scheme ->
+                val previewScheme = if (scheme.id == "default") {
+                    ColorSchemeManager.resolveSchemeForAppTheme(scheme, appDarkTheme)
+                } else {
+                    scheme
+                }
+
                 ColorSchemeCard(
-                    scheme = scheme,
+                    scheme = previewScheme,
                     isSelected = scheme.id == currentScheme.id,
                     onClick = {
                         ColorSchemeManager.setColorScheme(scheme)

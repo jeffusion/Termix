@@ -12,6 +12,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -110,14 +111,15 @@ fun KarbonTheme(
     terminalColorScheme: TerminalColorScheme = ColorSchemeManager.currentScheme.value,
     content: @Composable () -> Unit,
 ) {
-    val hasCustomScheme = terminalColorScheme.id != "default"
+    val hasCustomScheme = ColorSchemeManager.hasCustomSchemeSelection()
+    val resolvedTerminalScheme = ColorSchemeManager.resolveSchemeForAppTheme(terminalColorScheme, darkTheme)
     
     val colorScheme = when {
         // If user selected a custom terminal color scheme, use it (overrides Monet)
         hasCustomScheme -> {
-            val baseScheme = ColorSchemeManager.generateMaterial3ColorScheme(terminalColorScheme)
+            val baseScheme = ColorSchemeManager.generateMaterial3ColorScheme(resolvedTerminalScheme)
             when {
-                highContrastDarkTheme && terminalColorScheme.isDark ->
+                highContrastDarkTheme && ColorSchemeManager.isSchemeDark(resolvedTerminalScheme) ->
                     baseScheme.copy(background = Color.Black, surface = Color.Black)
                 else -> baseScheme
             }
@@ -142,16 +144,13 @@ fun KarbonTheme(
         else -> LightColorScheme
     }
     
-    // Determine if we should use light status bar icons
-    val useLightStatusBar = if (hasCustomScheme) {
-        !terminalColorScheme.isDark
-    } else {
-        !darkTheme
-    }
-    
+    val useDarkSystemBarIcons = colorScheme.background.luminance() > 0.5f
+
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
+            ColorSchemeManager.syncDefaultSchemeWithAppTheme(darkTheme)
+
             (view.context as Activity).apply {
                 // CRITICAL: Programmatically set the window background color
                 // This overrides the XML theme's android:colorBackground
@@ -159,8 +158,8 @@ fun KarbonTheme(
                 window.decorView.setBackgroundColor(colorScheme.background.toArgb())
                 
                 WindowCompat.getInsetsController(window, window.decorView).apply {
-                    isAppearanceLightStatusBars = useLightStatusBar
-                    isAppearanceLightNavigationBars = useLightStatusBar
+                    isAppearanceLightStatusBars = useDarkSystemBarIcons
+                    isAppearanceLightNavigationBars = useDarkSystemBarIcons
                 }
             }
         }

@@ -41,7 +41,7 @@ fun showStatusBar(show: Boolean,window: Window){
     }else{
         if (show){
             WindowInsetsControllerCompat(window, window.decorView).let { controller ->
-                controller.hide(WindowInsetsCompat.Type.statusBars())
+                controller.show(WindowInsetsCompat.Type.statusBars())
                 controller.systemBarsBehavior =
                     WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
             }
@@ -75,7 +75,7 @@ fun MainActivityNavHost(modifier: Modifier = Modifier,navController: NavHostCont
     ) {
 
         composable(MainActivityRoutes.MainScreen.route) {
-            if (Rootfs.isDownloaded.value){
+            if (Rootfs.isFilesDownloaded()){
                 val config = LocalConfiguration.current
                 if (Configuration.ORIENTATION_LANDSCAPE == config.orientation){
                     UpdateStatusBar(mainActivity, show = horizontal_statusBar.value)

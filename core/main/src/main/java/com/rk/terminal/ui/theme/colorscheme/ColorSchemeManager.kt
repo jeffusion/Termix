@@ -3,8 +3,11 @@ package com.rk.terminal.ui.theme.colorscheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
+import com.rk.libcommons.application
+import com.rk.libcommons.isDarkMode
 import com.rk.settings.Settings
 import com.termux.terminal.TerminalColors
 import com.termux.view.TerminalView
@@ -20,6 +23,14 @@ import java.lang.ref.WeakReference
  * - Generating Material 3 ColorScheme from terminal colors for app UI consistency
  */
 object ColorSchemeManager {
+
+    private const val DEFAULT_SCHEME_ID = "default"
+
+    private var appDarkTheme = when (Settings.default_night_mode) {
+        AppCompatDelegate.MODE_NIGHT_YES -> true
+        AppCompatDelegate.MODE_NIGHT_NO -> false
+        else -> application?.let { isDarkMode(it) } ?: true
+    }
     
     /**
      * Observable state for the current color scheme.
@@ -36,8 +47,38 @@ object ColorSchemeManager {
      * Loads the saved color scheme from preferences.
      */
     private fun loadSavedScheme(): TerminalColorScheme {
-        val schemeId = Settings.terminal_color_scheme
-        return ColorSchemes.getByIdOrDefault(schemeId)
+        return resolveSchemeById(Settings.terminal_color_scheme)
+    }
+
+    private fun resolveSchemeById(schemeId: String): TerminalColorScheme {
+        return if (schemeId == DEFAULT_SCHEME_ID) {
+            ColorSchemes.resolveDefaultForAppTheme(appDarkTheme)
+        } else {
+            ColorSchemes.getById(schemeId) ?: ColorSchemes.resolveDefaultForAppTheme(appDarkTheme)
+        }
+    }
+
+    fun resolveSchemeForAppTheme(scheme: TerminalColorScheme, isDarkTheme: Boolean): TerminalColorScheme {
+        return if (scheme.id == DEFAULT_SCHEME_ID) {
+            ColorSchemes.resolveDefaultForAppTheme(isDarkTheme)
+        } else {
+            scheme
+        }
+    }
+
+    fun syncDefaultSchemeWithAppTheme(isDarkTheme: Boolean) {
+        if (appDarkTheme == isDarkTheme && Settings.terminal_color_scheme != DEFAULT_SCHEME_ID) {
+            return
+        }
+        appDarkTheme = isDarkTheme
+
+        if (Settings.terminal_color_scheme == DEFAULT_SCHEME_ID) {
+            val resolved = resolveSchemeById(DEFAULT_SCHEME_ID)
+            if (!isSameVisualScheme(currentScheme.value, resolved)) {
+                currentScheme.value = resolved
+                applyToTerminal(resolved)
+            }
+        }
     }
     
     /**
@@ -51,6 +92,19 @@ object ColorSchemeManager {
      * Gets the current color scheme.
      */
     fun getCurrentScheme(): TerminalColorScheme = currentScheme.value
+
+    fun shouldUseDarkUiText(scheme: TerminalColorScheme = currentScheme.value): Boolean {
+        return isArgbColorLight(scheme.background)
+    }
+
+    fun isSchemeDark(scheme: TerminalColorScheme = currentScheme.value): Boolean {
+        return !shouldUseDarkUiText(scheme)
+    }
+
+    fun hasCustomSchemeSelection(): Boolean {
+        val selectedSchemeId = Settings.terminal_color_scheme
+        return selectedSchemeId != DEFAULT_SCHEME_ID && ColorSchemes.getById(selectedSchemeId) != null
+    }
     
     /**
      * Sets and applies a new color scheme.
@@ -59,14 +113,15 @@ object ColorSchemeManager {
      * @param persist Whether to save the selection to preferences (default: true)
      */
     fun setColorScheme(scheme: TerminalColorScheme, persist: Boolean = true) {
-        currentScheme.value = scheme
-        
+        val resolvedScheme = resolveSchemeForAppTheme(scheme, appDarkTheme)
+        currentScheme.value = resolvedScheme
+
         if (persist) {
             Settings.terminal_color_scheme = scheme.id
         }
-        
+
         // Apply to terminal
-        applyToTerminal(scheme)
+        applyToTerminal(resolvedScheme)
     }
     
     
@@ -75,7 +130,20 @@ object ColorSchemeManager {
      * Call this when the terminal view is created or recreated.
      */
     fun applyCurrentSchemeToTerminal() {
-        applyToTerminal(currentScheme.value)
+        val resolved = resolveSchemeById(Settings.terminal_color_scheme)
+        currentScheme.value = resolved
+        applyToTerminal(resolved)
+    }
+
+    private fun isSameVisualScheme(a: TerminalColorScheme, b: TerminalColorScheme): Boolean {
+        return a.background == b.background &&
+            a.foreground == b.foreground &&
+            a.cursor == b.cursor &&
+            a.isDark == b.isDark
+    }
+
+    private fun isArgbColorLight(argb: Int): Boolean {
+        return isColorLight(Color(argb))
     }
     
     /**
