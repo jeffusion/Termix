@@ -12,6 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.core.app.NotificationCompat
 import com.rk.resources.drawables
 import com.rk.resources.strings
+import com.rk.terminal.App.Companion.getTempDir
 import com.rk.terminal.ui.activities.terminal.MainActivity
 import com.rk.terminal.ui.screens.settings.Settings
 import com.rk.terminal.ui.screens.terminal.MkSession
@@ -48,6 +49,8 @@ class SessionService : Service() {
             WorkingMode.ALPINE -> "alpine"
             WorkingMode.ANDROID -> "android"
             WorkingMode.ALPINE_ROOT -> "alpine (root)"
+            WorkingMode.ARCH -> "arch"
+            WorkingMode.ARCH_ROOT -> "arch (root)"
             else -> sessionId
         }
         return modeName
@@ -70,6 +73,15 @@ class SessionService : Service() {
             com.rk.settings.Settings.setCustomSessionName(sessionId, name)
         }
     }
+    private fun cleanupSessionTemp(sessionId: String) {
+        runCatching {
+            val tmpDir = getTempDir().resolve(sessionId)
+            if (tmpDir.exists()) {
+                tmpDir.deleteRecursively()
+            }
+        }.onFailure { it.printStackTrace() }
+    }
+
     inner class SessionBinder : Binder() {
         fun getService():SessionService{
             return this@SessionService
@@ -78,6 +90,7 @@ class SessionService : Service() {
             sessions.values.forEach{
                 it.finishIfRunning()
             }
+            sessions.keys.toList().forEach { cleanupSessionTemp(it) }
             sessions.clear()
             sessionOrder.clear()
             sessionList.clear()
@@ -116,6 +129,7 @@ class SessionService : Service() {
                 sessionTitles.remove(id)
                 sessionCustomNames.remove(id)
                 com.rk.settings.Settings.removeCustomSessionName(id)
+                cleanupSessionTemp(id)
                 if (sessions.isEmpty()) {
                     stopSelf()
                 } else {
@@ -140,6 +154,7 @@ class SessionService : Service() {
     }
 
     override fun onDestroy() {
+        sessions.keys.toList().forEach { cleanupSessionTemp(it) }
         sessions.forEach { s -> s.value.finishIfRunning() }
         super.onDestroy()
     }
@@ -162,6 +177,7 @@ class SessionService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             "ACTION_EXIT" -> {
+                sessions.keys.toList().forEach { cleanupSessionTemp(it) }
                 sessions.forEach { s -> s.value.finishIfRunning() }
                 stopSelf()
             }
