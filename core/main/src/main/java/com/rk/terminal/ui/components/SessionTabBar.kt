@@ -220,6 +220,7 @@ fun SessionTabBar(
 private fun getSessionColor(workingMode: Int?, selected: Boolean): Color {
     return when (workingMode) {
         WorkingMode.ALPINE_ROOT -> Color(0xFFEF5350) // Red — root danger
+        WorkingMode.ARCH_ROOT -> Color(0xFFEF5350) // Red — root danger
         WorkingMode.ANDROID -> Color(0xFFFFA726) // Amber — system shell
         else -> if (selected)
             MaterialTheme.colorScheme.onSurface

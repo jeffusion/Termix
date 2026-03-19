@@ -8,6 +8,7 @@ Download the latest APK from the [Releases Section](https://github.com/RohitKush
 - [x] Virtual Keys
 - [x] Multiple Sessions
 - [x] Alpine Linux support
+- [x] Arch Linux ARM support (initial)
 - [x] Configurable Keyboard Shortcuts (Paste, Session Management)
 
 # Screenshots

@@ -40,6 +40,22 @@ fun alpineHomeDir(): File{
     }
 }
 
+fun archDir(): File{
+    return localDir().child("arch").also {
+        if (!it.exists()) {
+            it.mkdirs()
+        }
+    }
+}
+
+fun archHomeDir(): File{
+    return archDir().child("root").also {
+        if (!it.exists()) {
+            it.mkdirs()
+        }
+    }
+}
+
 fun localBinDir(): File {
     return localDir().child("bin").also {
         if (!it.exists()) {

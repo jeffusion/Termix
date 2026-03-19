@@ -15,7 +15,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -118,6 +117,8 @@ object WorkingMode{
     const val ALPINE = 0
     const val ANDROID = 1
     const val ALPINE_ROOT = 2
+    const val ARCH = 3
+    const val ARCH_ROOT = 4
 }
 
 object InputMode {
@@ -246,7 +247,11 @@ fun Settings(modifier: Modifier = Modifier,navController: NavController,mainActi
                         ColorSchemeManager.applyCurrentSchemeToTerminal()
                         tv.invalidate()
                     }
-                    darkText.value = !scheme.isDark
+                    darkText.value = if (bitmap.value != null) {
+                        Settings.blackTextColor
+                    } else {
+                        ColorSchemeManager.shouldUseDarkUiText(ColorSchemeManager.getCurrentScheme())
+                    }
                 }
             )
         }
@@ -406,14 +411,13 @@ fun Settings(modifier: Modifier = Modifier,navController: NavController,mainActi
                     Text(backgroundName)
                 },
                 endWidget = {
-                    val darkMode = isSystemInDarkTheme()
                     if (imageExists){
                         IconButton(onClick = {
                             scope.launch{
                                 image.delete()
                                 Settings.custom_background_name = noImageSelected
                                 backgroundName = noImageSelected
-                                darkText.value = !darkMode
+                                darkText.value = ColorSchemeManager.shouldUseDarkUiText(ColorSchemeManager.getCurrentScheme())
                                 imageExists = image.exists()
                                 bitmap.value = null
                             }
@@ -654,6 +658,40 @@ fun Settings(modifier: Modifier = Modifier,navController: NavController,mainActi
                 },
                 onClick = {
                     selectedOption = WorkingMode.ALPINE_ROOT
+                    Settings.working_Mode = selectedOption
+                })
+
+            SettingsCard(
+                title = { Text("Arch") },
+                description = {Text(stringResource(strings.arch_desc))},
+                startWidget = {
+                    RadioButton(
+                        modifier = Modifier.padding(start = 8.dp),
+                        selected = selectedOption == WorkingMode.ARCH,
+                        onClick = {
+                            selectedOption = WorkingMode.ARCH
+                            Settings.working_Mode = selectedOption
+                        })
+                },
+                onClick = {
+                    selectedOption = WorkingMode.ARCH
+                    Settings.working_Mode = selectedOption
+                })
+
+            SettingsCard(
+                title = { Text(stringResource(strings.arch_root)) },
+                description = {Text(stringResource(strings.arch_root_desc))},
+                startWidget = {
+                    RadioButton(
+                        modifier = Modifier.padding(start = 8.dp),
+                        selected = selectedOption == WorkingMode.ARCH_ROOT,
+                        onClick = {
+                            selectedOption = WorkingMode.ARCH_ROOT
+                            Settings.working_Mode = selectedOption
+                        })
+                },
+                onClick = {
+                    selectedOption = WorkingMode.ARCH_ROOT
                     Settings.working_Mode = selectedOption
                 })
         }

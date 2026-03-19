@@ -14,8 +14,10 @@ import android.provider.DocumentsProvider
 import android.util.Log
 import android.webkit.MimeTypeMap
 import com.rk.libcommons.alpineHomeDir
+import com.rk.libcommons.archHomeDir
 import com.rk.resources.getString
 import com.rk.resources.strings
+import com.rk.settings.Settings
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -23,6 +25,7 @@ import java.util.Collections
 import java.util.LinkedList
 import java.util.Locale
 import com.rk.terminal.R
+import com.rk.terminal.ui.screens.settings.WorkingMode
 
 class AlpineDocumentProvider : DocumentsProvider() {
     override fun queryRoots(projection: Array<String>?): Cursor {
@@ -32,9 +35,10 @@ class AlpineDocumentProvider : DocumentsProvider() {
         )
         val applicationName = "ReTerminal"
 
+        val baseDir = getBaseDir()
         val row = result.newRow()
-        row.add(DocumentsContract.Root.COLUMN_ROOT_ID, getDocIdForFile(BASE_DIR))
-        row.add(DocumentsContract.Root.COLUMN_DOCUMENT_ID, getDocIdForFile(BASE_DIR))
+        row.add(DocumentsContract.Root.COLUMN_ROOT_ID, getDocIdForFile(baseDir))
+        row.add(DocumentsContract.Root.COLUMN_DOCUMENT_ID, getDocIdForFile(baseDir))
         row.add(DocumentsContract.Root.COLUMN_SUMMARY, null)
         row.add(
             DocumentsContract.Root.COLUMN_FLAGS,
@@ -42,7 +46,7 @@ class AlpineDocumentProvider : DocumentsProvider() {
         )
         row.add(DocumentsContract.Root.COLUMN_TITLE, applicationName)
         row.add(DocumentsContract.Root.COLUMN_MIME_TYPES, ALL_MIME_TYPES)
-        row.add(DocumentsContract.Root.COLUMN_AVAILABLE_BYTES, BASE_DIR.freeSpace)
+        row.add(DocumentsContract.Root.COLUMN_AVAILABLE_BYTES, baseDir.freeSpace)
         row.add(DocumentsContract.Root.COLUMN_ICON, R.mipmap.ic_launcher)
         return result
     }
@@ -172,7 +176,7 @@ class AlpineDocumentProvider : DocumentsProvider() {
             // through the whole SD card).
             var isInsideHome: Boolean
             try {
-                isInsideHome = file.canonicalPath.startsWith(alpineHomeDir().canonicalPath)
+                isInsideHome = file.canonicalPath.startsWith(getBaseDir().canonicalPath)
             } catch (e: IOException) {
                 isInsideHome = true
             }
@@ -264,7 +268,13 @@ class AlpineDocumentProvider : DocumentsProvider() {
 
         private const val ALL_MIME_TYPES = "*/*"
 
-        private val BASE_DIR = alpineHomeDir()
+        private fun getBaseDir(): File {
+            return when (Settings.working_Mode) {
+                WorkingMode.ARCH,
+                WorkingMode.ARCH_ROOT -> archHomeDir()
+                else -> alpineHomeDir()
+            }
+        }
 
         // The default columns to return information about a root if no specific
         // columns are requested in a query.

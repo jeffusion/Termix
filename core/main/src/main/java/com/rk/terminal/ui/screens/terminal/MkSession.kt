@@ -3,6 +3,7 @@ package com.rk.terminal.ui.screens.terminal
 import android.os.Environment
 import com.rk.libcommons.alpineDir
 import com.rk.libcommons.alpineHomeDir
+import com.rk.libcommons.archHomeDir
 import com.rk.libcommons.application
 import com.rk.libcommons.child
 import com.rk.libcommons.createFileIfNot
@@ -40,7 +41,12 @@ object MkSession {
                 "EXTERNAL_STORAGE" to System.getenv("EXTERNAL_STORAGE")
             )
 
-            val workingDir = pendingCommand?.workingDir ?: alpineHomeDir().path
+            val defaultWorkingDir = when (workingMode) {
+                WorkingMode.ARCH,
+                WorkingMode.ARCH_ROOT -> archHomeDir().path
+                else -> alpineHomeDir().path
+            }
+            val workingDir = pendingCommand?.workingDir ?: defaultWorkingDir
 
             val initFile: File = localBinDir().child("init-host")
 
@@ -55,6 +61,7 @@ object MkSession {
                     createFileIfNot()
                     writeText(assets.open("init.sh").bufferedReader().use { it.readText() })
                 }
+                setExecutable(true)
             }
 
             localBinDir().child("init-root").apply {
@@ -62,8 +69,34 @@ object MkSession {
                     createFileIfNot()
                     writeText(assets.open("init-root.sh").bufferedReader().use { it.readText() })
                 }
+                setExecutable(true)
             }
 
+            localBinDir().child("init-arch").apply {
+                createFileIfNot()
+                writeText(assets.open("init-arch.sh").bufferedReader().use { it.readText() })
+                setExecutable(true)
+            }
+
+            localBinDir().child("init-arch-host").apply {
+                createFileIfNot()
+                writeText(assets.open("init-arch-host.sh").bufferedReader().use { it.readText() })
+                setExecutable(true)
+            }
+
+            localBinDir().child("init-arch-root").apply {
+                createFileIfNot()
+                writeText(assets.open("init-arch-root.sh").bufferedReader().use { it.readText() })
+                setExecutable(true)
+            }
+
+
+            val sessionTmpDir = getTempDir().child(session_id).also {
+                if (it.exists()) {
+                    it.deleteRecursively()
+                }
+                it.mkdirs()
+            }
 
             val env = mutableListOf(
                 "PATH=${System.getenv("PATH")}:/sbin:${localBinDir().absolutePath}",
@@ -81,7 +114,7 @@ object MkSession {
                 "PKG=${packageName}",
                 "RISH_APPLICATION_ID=${packageName}",
                 "PKG_PATH=${applicationInfo.sourceDir}",
-                "PROOT_TMP_DIR=${getTempDir().child(session_id).also { if (it.exists().not()){it.mkdirs()} }.absolutePath}",
+                "PROOT_TMP_DIR=${sessionTmpDir.absolutePath}",
                 "TMPDIR=${getTempDir().absolutePath}"
             )
 
@@ -89,10 +122,10 @@ object MkSession {
             // External loaders from jniLibs conflict with proot's ashmem_memfd extension
             // and fail on Android 10+ due to W^X (Write XOR Execute) policy.
 
-            // Shell type for Alpine mode
             val shellPath = when (Settings.default_shell) {
                 ShellType.BASH -> "/bin/bash"
                 ShellType.ZSH -> "/bin/zsh"
+                ShellType.ASH -> "/bin/ash"
                 else -> "/bin/ash"
             }
             env.add("RETERM_SHELL=$shellPath")
@@ -121,6 +154,8 @@ object MkSession {
                 args = when (workingMode) {
                     WorkingMode.ALPINE -> arrayOf("-c", initFile.absolutePath)
                     WorkingMode.ALPINE_ROOT -> arrayOf("-c", localBinDir().child("init-root").absolutePath)
+                    WorkingMode.ARCH -> arrayOf("-c", localBinDir().child("init-arch-host").absolutePath)
+                    WorkingMode.ARCH_ROOT -> arrayOf("-c", localBinDir().child("init-arch-root").absolutePath)
                     else -> arrayOf()
                 }
                 "/system/bin/sh"

@@ -46,8 +46,17 @@
     <string name="cancel">取消</string>
     <string name="installing">安装中</string>
     <string name="downloading">下载中.. %1$d%%</string>
+    <string name="arch_installing_rootfs">正在准备 Arch 文件系统（首次运行可能需要几分钟）</string>
+    <string name="download_panel_title">环境准备</string>
+    <string name="overall_progress_title">下载进度</string>
+    <string name="rootfs_progress_title">Rootfs 下载进度</string>
+    <string name="current_file_title">当前文件</string>
+    <string name="transfer_rate_title">传输速率</string>
+    <string name="install_logs_title">安装日志</string>
+    <string name="install_logs_waiting">等待安装日志输出…</string>
     <string name="network_error">网络错误</string>
     <string name="setup_failed">安装失败：%1$s</string>
+    <string name="retry_setup">重试安装</string>
     <string name="keyboard_shortcuts">键盘快捷键</string>
     <string name="keyboard_shortcuts_desc">启用键盘快捷键</string>
     <string name="shortcut_paste">粘贴</string>
