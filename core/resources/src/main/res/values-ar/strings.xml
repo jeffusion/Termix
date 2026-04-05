@@ -3,6 +3,13 @@
     <string name="settings">الإعدادات</string>
     <string name="use_shizuku">تسجيل الدخول التلقائي إلى Shizuku</string>
     <string name="use_shizuku_desc">تنفيذ أمر rish تلقائيًا</string>
+    <string name="terminal_env_alpine">Alpine</string>
+    <string name="terminal_env_arch">Arch</string>
+    <string name="terminal_env_android">Android</string>
+    <string name="terminal_env_root_toggle">بدء التشغيل بصلاحيات root</string>
+    <string name="terminal_env_root_toggle_desc">تشغيل %1$s بصلاحيات root حقيقية</string>
+    <string name="terminal_env_android_root_unavailable_title">بدء root غير متاح</string>
+    <string name="terminal_env_android_root_unavailable_desc">يبدأ Android shell بدون وضع root في هذه البيئة</string>
     <string name="alpine_root">Alpine (Root)</string>
     <string name="alpine_root_desc">Alpine Linux مع صلاحيات root حقيقية</string>
     <string name="default_shell">Shell الافتراضي</string>

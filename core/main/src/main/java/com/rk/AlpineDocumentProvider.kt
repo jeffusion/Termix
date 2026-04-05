@@ -25,7 +25,7 @@ import java.util.Collections
 import java.util.LinkedList
 import java.util.Locale
 import com.rk.terminal.R
-import com.rk.terminal.ui.screens.settings.WorkingMode
+import com.rk.terminal.model.WorkingMode
 
 class AlpineDocumentProvider : DocumentsProvider() {
     override fun queryRoots(projection: Array<String>?): Cursor {

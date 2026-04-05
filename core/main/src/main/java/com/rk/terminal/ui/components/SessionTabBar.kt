@@ -34,7 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
-import com.rk.terminal.ui.screens.settings.WorkingMode
+import com.rk.terminal.model.WorkingMode
 
 private val TAB_WIDTH = 160.dp
 private val TAB_HEIGHT = 36.dp

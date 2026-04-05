@@ -53,8 +53,15 @@ import com.rk.libcommons.child
 import com.rk.libcommons.createFileIfNot
 import com.rk.libcommons.dpToPx
 import com.rk.settings.Settings
+import com.rk.terminal.model.WorkingMode
 import com.rk.terminal.ui.activities.terminal.MainActivity
 import com.rk.terminal.ui.components.SettingsToggle
+import com.rk.terminal.ui.components.TerminalEnvironmentOption
+import com.rk.terminal.ui.components.TerminalEnvironmentSegmentedSelector
+import com.rk.terminal.ui.components.terminalEnvironmentDescriptionRes
+import com.rk.terminal.ui.components.terminalEnvironmentFromWorkingMode
+import com.rk.terminal.ui.components.terminalEnvironmentToWorkingMode
+import com.rk.terminal.ui.components.workingModeIsRoot
 import com.rk.terminal.ui.navHosts.horizontal_statusBar
 import com.rk.terminal.ui.navHosts.showStatusBar
 import com.rk.terminal.ui.screens.customization.ColorSchemeSelector
@@ -112,15 +119,6 @@ fun SettingsCard(
 
 }
 
-
-object WorkingMode{
-    const val ALPINE = 0
-    const val ANDROID = 1
-    const val ALPINE_ROOT = 2
-    const val ARCH = 3
-    const val ARCH_ROOT = 4
-}
-
 object InputMode {
     const val DEFAULT = 0
     const val TYPE_NULL = 1
@@ -163,11 +161,25 @@ private fun getFileNameFromUri(context: Context, uri: Uri): String? {
 @Composable
 fun Settings(modifier: Modifier = Modifier,navController: NavController,mainActivity: MainActivity) {
     val context = LocalContext.current
-    var selectedOption by remember { mutableIntStateOf(Settings.working_Mode) }
+    val initialTerminalEnvironment = remember {
+        terminalEnvironmentFromWorkingMode(Settings.working_Mode)
+    }
+    var selectedTerminalEnvironment by remember { mutableStateOf(initialTerminalEnvironment) }
+    var startWithRoot by remember {
+        mutableStateOf(workingModeIsRoot(Settings.working_Mode) && initialTerminalEnvironment.supportsRoot)
+    }
     var selectedInputMode by remember { mutableIntStateOf(Settings.input_mode) }
     var selectedLayoutMode by remember { mutableIntStateOf(Settings.layout_mode) }
     var selectedCloseLastSessionBehavior by remember { mutableIntStateOf(Settings.close_last_session_behavior) }
     var selectedShellType by remember { mutableIntStateOf(Settings.default_shell) }
+
+    val applyTerminalEnvironmentSelection: (TerminalEnvironmentOption, Boolean) -> Unit = { environment, rootEnabled ->
+        val normalizedRoot = rootEnabled && environment.supportsRoot
+        selectedTerminalEnvironment = environment
+        startWithRoot = normalizedRoot
+        Settings.working_Mode = terminalEnvironmentToWorkingMode(environment, normalizedRoot)
+    }
+
     PreferenceLayout(label = stringResource(strings.settings)) {
 
         // ======================================================
@@ -607,93 +619,49 @@ fun Settings(modifier: Modifier = Modifier,navController: NavController,mainActi
         // ======================================================
         PreferenceGroup(heading = stringResource(strings.terminal_environment)) {
 
-            SettingsCard(
-                title = { Text("Alpine") },
-                description = {Text(stringResource(strings.alpine_desc))},
-                startWidget = {
-                    RadioButton(
-                        modifier = Modifier.padding(start = 8.dp),
-                        selected = selectedOption == WorkingMode.ALPINE,
-                        onClick = {
-                            selectedOption = WorkingMode.ALPINE
-                            Settings.working_Mode = selectedOption
-                        })
+            PreferenceTemplate(
+                title = { Text(stringResource(strings.default_working_mode)) },
+                description = {
+                    Text(
+                        stringResource(
+                            terminalEnvironmentDescriptionRes(
+                                selectedTerminalEnvironment,
+                                startWithRoot,
+                            )
+                        )
+                    )
                 },
-                onClick = {
-                    selectedOption = WorkingMode.ALPINE
-                    Settings.working_Mode = selectedOption
-                })
+            ) {}
 
-
-            SettingsCard(
-                title = { Text("Android") },
-                description = {Text(stringResource(strings.android_desc))},
-                startWidget = {
-                    RadioButton(
-                        modifier = Modifier
-                            .padding(start = 8.dp)
-                            ,
-                        selected = selectedOption == WorkingMode.ANDROID,
-                        onClick = {
-                            selectedOption = WorkingMode.ANDROID
-                            Settings.working_Mode = selectedOption
-                        })
+            TerminalEnvironmentSegmentedSelector(
+                selectedEnvironment = selectedTerminalEnvironment,
+                onSelected = { environment ->
+                    applyTerminalEnvironmentSelection(environment, startWithRoot)
                 },
-                onClick = {
-                    selectedOption = WorkingMode.ANDROID
-                    Settings.working_Mode = selectedOption
-                })
+            )
 
-            SettingsCard(
-                title = { Text(stringResource(strings.alpine_root)) },
-                description = {Text(stringResource(strings.alpine_root_desc))},
-                startWidget = {
-                    RadioButton(
-                        modifier = Modifier.padding(start = 8.dp),
-                        selected = selectedOption == WorkingMode.ALPINE_ROOT,
-                        onClick = {
-                            selectedOption = WorkingMode.ALPINE_ROOT
-                            Settings.working_Mode = selectedOption
-                        })
-                },
-                onClick = {
-                    selectedOption = WorkingMode.ALPINE_ROOT
-                    Settings.working_Mode = selectedOption
-                })
-
-            SettingsCard(
-                title = { Text("Arch") },
-                description = {Text(stringResource(strings.arch_desc))},
-                startWidget = {
-                    RadioButton(
-                        modifier = Modifier.padding(start = 8.dp),
-                        selected = selectedOption == WorkingMode.ARCH,
-                        onClick = {
-                            selectedOption = WorkingMode.ARCH
-                            Settings.working_Mode = selectedOption
-                        })
-                },
-                onClick = {
-                    selectedOption = WorkingMode.ARCH
-                    Settings.working_Mode = selectedOption
-                })
-
-            SettingsCard(
-                title = { Text(stringResource(strings.arch_root)) },
-                description = {Text(stringResource(strings.arch_root_desc))},
-                startWidget = {
-                    RadioButton(
-                        modifier = Modifier.padding(start = 8.dp),
-                        selected = selectedOption == WorkingMode.ARCH_ROOT,
-                        onClick = {
-                            selectedOption = WorkingMode.ARCH_ROOT
-                            Settings.working_Mode = selectedOption
-                        })
-                },
-                onClick = {
-                    selectedOption = WorkingMode.ARCH_ROOT
-                    Settings.working_Mode = selectedOption
-                })
+            if (selectedTerminalEnvironment.supportsRoot) {
+                PreferenceSwitch(
+                    checked = startWithRoot,
+                    onCheckedChange = {
+                        applyTerminalEnvironmentSelection(selectedTerminalEnvironment, it)
+                    },
+                    label = stringResource(strings.terminal_env_root_toggle),
+                    modifier = modifier,
+                    description = stringResource(
+                        strings.terminal_env_root_toggle_desc,
+                        stringResource(selectedTerminalEnvironment.labelRes),
+                    ),
+                    onClick = {
+                        applyTerminalEnvironmentSelection(selectedTerminalEnvironment, !startWithRoot)
+                    },
+                )
+            } else {
+                PreferenceTemplate(
+                    title = { Text(stringResource(strings.terminal_env_android_root_unavailable_title)) },
+                    description = { Text(stringResource(strings.terminal_env_android_root_unavailable_desc)) },
+                ) {}
+            }
         }
 
         PreferenceGroup(heading = stringResource(strings.default_shell)) {

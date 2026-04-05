@@ -6,7 +6,7 @@ import com.rk.libcommons.application
 import com.rk.libcommons.archDir
 import com.rk.libcommons.child
 import com.rk.settings.Settings
-import com.rk.terminal.ui.screens.settings.WorkingMode
+import com.rk.terminal.model.WorkingMode
 import com.rk.terminal.App
 import java.io.File
 

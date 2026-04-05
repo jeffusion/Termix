@@ -6,7 +6,7 @@ import android.content.SharedPreferences
 import android.os.Build
 import androidx.appcompat.app.AppCompatDelegate
 import com.rk.libcommons.application
-import com.rk.terminal.ui.screens.settings.WorkingMode
+import com.rk.terminal.model.WorkingMode
 import com.rk.terminal.ui.screens.settings.InputMode
 import com.rk.terminal.ui.screens.settings.LayoutMode
 import com.rk.terminal.ui.screens.settings.CloseLastSessionBehavior

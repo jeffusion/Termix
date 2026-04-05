@@ -6,6 +6,13 @@
     <string name="default_working_mode">默认工作模式</string>
     <string name="alpine_desc">Alpine Linux</string>
     <string name="android_desc">ReTerminal Android Shell</string>
+    <string name="terminal_env_alpine">Alpine</string>
+    <string name="terminal_env_arch">Arch</string>
+    <string name="terminal_env_android">Android</string>
+    <string name="terminal_env_root_toggle">以 Root 权限启动</string>
+    <string name="terminal_env_root_toggle_desc">以真实 Root 权限启动 %1$s</string>
+    <string name="terminal_env_android_root_unavailable_title">不支持 Root 启动</string>
+    <string name="terminal_env_android_root_unavailable_desc">Android Shell 在该环境下不提供 Root 启动模式</string>
     <string name="alpine_root">Alpine (Root)</string>
     <string name="alpine_root_desc">具有真实 Root 权限的 Alpine Linux</string>
     <string name="default_shell">默认 Shell</string>
