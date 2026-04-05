@@ -16,7 +16,7 @@ import com.rk.terminal.App
 import com.rk.terminal.App.Companion.getTempDir
 import com.rk.terminal.BuildConfig
 import com.rk.terminal.ui.activities.terminal.MainActivity
-import com.rk.terminal.ui.screens.settings.WorkingMode
+import com.rk.terminal.model.WorkingMode
 import com.rk.terminal.ui.screens.settings.ShellType
 import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TerminalSession

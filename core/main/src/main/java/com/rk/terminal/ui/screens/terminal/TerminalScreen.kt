@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -44,6 +45,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -81,6 +83,8 @@ import androidx.navigation.NavController
 import com.google.android.material.R
 import androidx.compose.ui.res.stringResource
 import com.rk.components.compose.preferences.base.PreferenceGroup
+import com.rk.components.compose.preferences.base.PreferenceTemplate
+import com.rk.components.compose.preferences.switch.PreferenceSwitch
 import com.rk.libcommons.application
 import com.rk.resources.strings
 import com.rk.libcommons.child
@@ -91,10 +95,15 @@ import com.rk.settings.Settings
 import com.rk.terminal.ui.activities.terminal.MainActivity
 import com.rk.terminal.ui.components.InputDialog
 import com.rk.terminal.ui.components.SessionTabBar
+import com.rk.terminal.ui.components.TerminalEnvironmentOption
+import com.rk.terminal.ui.components.TerminalEnvironmentSegmentedSelector
+import com.rk.terminal.ui.components.terminalEnvironmentDescriptionRes
+import com.rk.terminal.ui.components.terminalEnvironmentFromWorkingMode
+import com.rk.terminal.ui.components.terminalEnvironmentToWorkingMode
+import com.rk.terminal.ui.components.workingModeIsRoot
 import com.rk.terminal.ui.routes.MainActivityRoutes
 import com.rk.terminal.ui.screens.settings.LayoutMode
-import com.rk.terminal.ui.screens.settings.SettingsCard
-import com.rk.terminal.ui.screens.settings.WorkingMode
+import com.rk.terminal.model.WorkingMode
 import com.rk.terminal.ui.screens.settings.CloseLastSessionBehavior
 import com.rk.terminal.ui.screens.terminal.virtualkeys.VirtualKeysConstants
 import com.rk.terminal.ui.screens.terminal.virtualkeys.VirtualKeysInfo
@@ -246,6 +255,12 @@ fun TerminalScreen(
         val scope = rememberCoroutineScope()
         val isTabBarMode = Settings.layout_mode == LayoutMode.TAB_BAR
         var showAddDialog by remember { mutableStateOf(false) }
+        var selectedNewSessionEnvironment by remember {
+            mutableStateOf(terminalEnvironmentFromWorkingMode(Settings.working_Mode))
+        }
+        var startNewSessionWithRoot by remember {
+            mutableStateOf(workingModeIsRoot(Settings.working_Mode))
+        }
         var showRenameDialogFor by remember { mutableStateOf<String?>(null) }
 
         // Helper function to generate unique session ID
@@ -284,6 +299,13 @@ fun TerminalScreen(
             changeSession(mainActivityActivity, session_id = sessionId)
         }
 
+        fun openAddSessionDialog() {
+            val initialEnvironment = terminalEnvironmentFromWorkingMode(Settings.working_Mode)
+            selectedNewSessionEnvironment = initialEnvironment
+            startNewSessionWithRoot = workingModeIsRoot(Settings.working_Mode) && initialEnvironment.supportsRoot
+            showAddDialog = true
+        }
+
         // Helper function to handle closing a session
         fun handleCloseSession(sessionId: String, currentSessionId: String) {
             val service = mainActivityActivity.sessionBinder?.getService() ?: return
@@ -318,55 +340,78 @@ fun TerminalScreen(
             }
         }
         // Add session dialog (shared between wide and narrow layouts)
-        if (showAddDialog){
+        if (showAddDialog) {
             BasicAlertDialog(
                 onDismissRequest = {
                     showAddDialog = false
                 }
             ) {
-
                 PreferenceGroup {
-                    SettingsCard(
-                        title = { Text("Alpine") },
-                        description = {Text(stringResource(strings.alpine_desc))},
-                        onClick = {
-                           createNewSession(workingMode = WorkingMode.ALPINE)
-                            showAddDialog = false
-                        })
+                    PreferenceTemplate(
+                        title = { Text(stringResource(strings.shortcut_new_session)) },
+                        description = {
+                            Text(
+                                stringResource(
+                                    terminalEnvironmentDescriptionRes(
+                                        selectedNewSessionEnvironment,
+                                        startNewSessionWithRoot,
+                                    )
+                                )
+                            )
+                        },
+                    ) {}
 
-                    SettingsCard(
-                        title = { Text("Android") },
-                        description = {Text(stringResource(strings.android_desc))},
-                        onClick = {
-                            createNewSession(workingMode = WorkingMode.ANDROID)
-                            showAddDialog = false
-                        })
+                    TerminalEnvironmentSegmentedSelector(
+                        selectedEnvironment = selectedNewSessionEnvironment,
+                        onSelected = { environment ->
+                            selectedNewSessionEnvironment = environment
+                            if (!environment.supportsRoot) {
+                                startNewSessionWithRoot = false
+                            }
+                        },
+                    )
 
-                    SettingsCard(
-                        title = { Text(stringResource(strings.alpine_root)) },
-                        description = {Text(stringResource(strings.alpine_root_desc))},
-                        onClick = {
-                            createNewSession(workingMode = WorkingMode.ALPINE_ROOT)
-                            showAddDialog = false
-                        })
+                    if (selectedNewSessionEnvironment.supportsRoot) {
+                        PreferenceSwitch(
+                            checked = startNewSessionWithRoot,
+                            onCheckedChange = {
+                                startNewSessionWithRoot = it
+                            },
+                            label = stringResource(strings.terminal_env_root_toggle),
+                            description = stringResource(
+                                strings.terminal_env_root_toggle_desc,
+                                stringResource(selectedNewSessionEnvironment.labelRes),
+                            ),
+                            onClick = {
+                                startNewSessionWithRoot = !startNewSessionWithRoot
+                            },
+                        )
+                    } else {
+                        PreferenceTemplate(
+                            title = { Text(stringResource(strings.terminal_env_android_root_unavailable_title)) },
+                            description = { Text(stringResource(strings.terminal_env_android_root_unavailable_desc)) },
+                        ) {}
+                    }
 
-                    SettingsCard(
-                        title = { Text("Arch") },
-                        description = {Text(stringResource(strings.arch_desc))},
+                    FilledTonalButton(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .heightIn(min = 48.dp),
                         onClick = {
-                            createNewSession(workingMode = WorkingMode.ARCH)
+                            createNewSession(
+                                workingMode = terminalEnvironmentToWorkingMode(
+                                    selectedNewSessionEnvironment,
+                                    startNewSessionWithRoot,
+                                )
+                            )
                             showAddDialog = false
-                        })
-
-                    SettingsCard(
-                        title = { Text(stringResource(strings.arch_root)) },
-                        description = {Text(stringResource(strings.arch_root_desc))},
-                        onClick = {
-                            createNewSession(workingMode = WorkingMode.ARCH_ROOT)
-                            showAddDialog = false
-                        })
+                        },
+                    ) {
+                        Text(stringResource(strings.shortcut_new_session))
+                    }
+                }
             }
-        }
         }
 
         // Rename session dialog
@@ -399,7 +444,7 @@ fun TerminalScreen(
                     getWorkingMode = { id -> service?.getWorkingMode(id) },
                     onSelectSession = { id -> changeSession(mainActivityActivity, id) },
                     onCloseSession = { id -> handleCloseSession(id, currentSessionId) },
-                    onAddSession = { showAddDialog = true },
+                    onAddSession = { openAddSessionDialog() },
                     onRenameSession = { id -> showRenameDialogFor = id },
                     onOpenSettings = { navController.navigate(MainActivityRoutes.Settings.route) },
                     modifier = Modifier.fillMaxWidth()
@@ -454,7 +499,7 @@ fun TerminalScreen(
                                     }
 
                                     IconButton(onClick = {
-                                        showAddDialog = true
+                                        openAddSessionDialog()
                                     }) {
                                         Icon(
                                             imageVector = Icons.Default.Add,
@@ -557,7 +602,7 @@ fun TerminalScreen(
                     TerminalContent(
                         mainActivityActivity = mainActivityActivity,
                         navController = navController,
-                        showAddDialog = { showAddDialog = true },
+                        showAddDialog = { openAddSessionDialog() },
                         openDrawer = { scope.launch { drawerState.open() } },
                     )
                 })

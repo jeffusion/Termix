@@ -7,6 +7,13 @@
     <string name="alpine_desc">Alpine Linux</string>
     <string name="arch_desc">Arch Linux ARM (proot)</string>
     <string name="android_desc">ReTerminal Android shell</string>
+    <string name="terminal_env_alpine">Alpine</string>
+    <string name="terminal_env_arch">Arch</string>
+    <string name="terminal_env_android">Android</string>
+    <string name="terminal_env_root_toggle">Start with root privileges</string>
+    <string name="terminal_env_root_toggle_desc">Launch %1$s with real root privileges</string>
+    <string name="terminal_env_android_root_unavailable_title">Root startup unavailable</string>
+    <string name="terminal_env_android_root_unavailable_desc">Android shell starts without root mode in this environment</string>
     <string name="alpine_root">Alpine (Root)</string>
     <string name="alpine_root_desc">Alpine Linux with real root privileges</string>
     <string name="arch_root">Arch (Root)</string>

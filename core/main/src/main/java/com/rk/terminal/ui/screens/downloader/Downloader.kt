@@ -24,7 +24,7 @@ import com.rk.resources.strings
 import com.rk.settings.Settings
 import com.rk.terminal.App
 import com.rk.terminal.ui.activities.terminal.MainActivity
-import com.rk.terminal.ui.screens.settings.WorkingMode
+import com.rk.terminal.model.WorkingMode
 import com.rk.terminal.ui.screens.terminal.Rootfs
 import com.rk.terminal.ui.screens.terminal.TerminalScreen
 import kotlinx.coroutines.Dispatchers
