@@ -4,6 +4,74 @@ set -e
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/system/bin:/system/xbin
 export HOME=/root
 
+resolve_runtime_hostname() {
+    if [ -n "$RETERM_GUEST_HOSTNAME" ]; then
+        printf '%s' "$RETERM_GUEST_HOSTNAME"
+        return 0
+    fi
+
+    if command -v hostname >/dev/null 2>&1; then
+        runtime_name=$(hostname 2>/dev/null || true)
+        if [ -n "$runtime_name" ]; then
+            printf '%s' "$runtime_name"
+            return 0
+        fi
+    fi
+
+    if [ -r /etc/hostname ]; then
+        IFS= read -r file_name < /etc/hostname || true
+        if [ -n "$file_name" ]; then
+            printf '%s' "$file_name"
+            return 0
+        fi
+    fi
+
+    printf '%s' "arch"
+}
+
+install_hostname_wrapper() {
+    wrapper_dir=/tmp/reterminal-runtime/bin
+    mkdir -p "$wrapper_dir"
+    cat > "$wrapper_dir/hostname" <<'EOF'
+#!/bin/sh
+resolve_name() {
+    if [ -n "$RETERM_GUEST_HOSTNAME" ]; then
+        printf '%s\n' "$RETERM_GUEST_HOSTNAME"
+        return 0
+    fi
+
+    if [ -r /etc/hostname ]; then
+        IFS= read -r file_name < /etc/hostname || true
+        if [ -n "$file_name" ]; then
+            printf '%s\n' "$file_name"
+            return 0
+        fi
+    fi
+
+    printf '%s\n' "arch"
+}
+
+case "$1" in
+    ""|-s|--short|-f|--fqdn)
+        resolve_name
+        ;;
+    *)
+        printf '%s\n' "hostname is managed from /etc/hostname in this session" >&2
+        exit 1
+        ;;
+esac
+EOF
+    chmod 755 "$wrapper_dir/hostname"
+    PATH="$wrapper_dir:$PATH"
+    export PATH
+}
+
+RUNTIME_HOSTNAME=$(resolve_runtime_hostname)
+export RETERM_GUEST_HOSTNAME="$RUNTIME_HOSTNAME"
+export HOST="$RUNTIME_HOSTNAME"
+export HOSTNAME="$RUNTIME_HOSTNAME"
+install_hostname_wrapper
+
 mkdir -p /etc
 if [ -L /etc/resolv.conf ]; then
     rm -f /etc/resolv.conf
@@ -129,9 +197,9 @@ if [ ! -f "$ARCH_INIT_DONE" ]; then
     fi
 fi
 
-printf '\033]0;%s\007' "arch"
+printf '\033]0;%s\007' "$RUNTIME_HOSTNAME"
 
-arch_bash_ps1="\[\e]0;\u@arch:\w\a\]\[\e[38;5;81m\]\u\[\033[39m\]@reterm \[\033[39m\]\w \[\033[0m\]\\$ "
+arch_bash_ps1="\[\e]0;\u@$RUNTIME_HOSTNAME:\w\a\]\[\e[38;5;81m\]\u\[\033[39m\]@$RUNTIME_HOSTNAME \[\033[39m\]\w \[\033[0m\]\\$ "
 
 reattach_tty_streams() {
     tty >/dev/null 2>&1 && return 0
@@ -174,6 +242,8 @@ launch_interactive_shell() {
         if [ -z "$TERM" ] || [ "$TERM" = "dumb" ]; then
             export TERM=xterm-256color
         fi
+        export HOST="$RUNTIME_HOSTNAME"
+        export HOSTNAME="$RUNTIME_HOSTNAME"
         export PS1="$arch_bash_ps1"
     fi
 
