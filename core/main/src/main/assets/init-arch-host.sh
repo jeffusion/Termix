@@ -6,6 +6,20 @@ ARCH_ROOTFS=$ARCH_DIR
 ARCH_READY_MARKER=$PREFIX/local/.reterminal-arch-installed
 PROOT_BIN=$PREFIX/local/bin/proot
 LIB_DIR=$PREFIX/local/lib
+
+resolve_guest_hostname() {
+    if [ -r "$ARCH_ROOTFS/etc/hostname" ]; then
+        IFS= read -r guest_name < "$ARCH_ROOTFS/etc/hostname" || true
+        guest_name=${guest_name%%[[:space:]]*}
+        if [ -n "$guest_name" ]; then
+            printf '%s' "$guest_name"
+            return 0
+        fi
+    fi
+
+    printf '%s' "arch"
+}
+
 RETERM_HOST_TTY=$(tty 2>/dev/null || true)
 case "$RETERM_HOST_TTY" in
     ""|"not a tty"*)
@@ -39,6 +53,8 @@ if [ ! -d "$ARCH_ROOTFS/etc" ]; then
     echo "Arch rootfs extraction failed: missing '$ARCH_ROOTFS/etc'"
     exit 1
 fi
+
+GUEST_HOSTNAME=$(resolve_guest_hostname)
 
 ARGS="--kill-on-exit"
 ARGS="$ARGS -w /"
@@ -96,8 +112,10 @@ ARGS="$ARGS --link2symlink"
 ARGS="$ARGS --sysvipc"
 ARGS="$ARGS -L"
 
+export RETERM_GUEST_HOSTNAME="$GUEST_HOSTNAME"
+
 if [ -n "$RETERM_HOST_TTY" ]; then
-    exec "$LINKER" "$PROOT_BIN" $ARGS env RETERM_HOST_TTY="$RETERM_HOST_TTY" sh "$PREFIX/local/bin/init-arch" "$@"
+    exec "$LINKER" "$PROOT_BIN" $ARGS env RETERM_HOST_TTY="$RETERM_HOST_TTY" RETERM_GUEST_HOSTNAME="$RETERM_GUEST_HOSTNAME" sh "$PREFIX/local/bin/init-arch" "$@"
 fi
 
-exec "$LINKER" "$PROOT_BIN" $ARGS sh "$PREFIX/local/bin/init-arch" "$@"
+exec "$LINKER" "$PROOT_BIN" $ARGS env RETERM_GUEST_HOSTNAME="$RETERM_GUEST_HOSTNAME" sh "$PREFIX/local/bin/init-arch" "$@"

@@ -8,6 +8,19 @@ PROOT_BIN=$PREFIX/local/bin/proot
 LIB_DIR=$PREFIX/local/lib
 INIT_BIN=$PREFIX/local/bin/init-arch
 
+resolve_guest_hostname() {
+    if [ -r "$ARCH_ROOTFS/etc/hostname" ]; then
+        IFS= read -r guest_name < "$ARCH_ROOTFS/etc/hostname" || true
+        guest_name=${guest_name%%[[:space:]]*}
+        if [ -n "$guest_name" ]; then
+            printf '%s' "$guest_name"
+            return 0
+        fi
+    fi
+
+    printf '%s' "arch"
+}
+
 mkdir -p "$ARCH_DIR"
 mkdir -p "$PREFIX/local/bin"
 mkdir -p "$LIB_DIR"
@@ -34,6 +47,8 @@ if [ ! -d "$ARCH_ROOTFS/etc" ]; then
     echo "Arch rootfs extraction failed: missing '$ARCH_ROOTFS/etc'"
     exit 1
 fi
+
+GUEST_HOSTNAME=$(resolve_guest_hostname)
 
 ARGS="--kill-on-exit"
 ARGS="$ARGS -w /"
@@ -86,4 +101,7 @@ ARGS="$ARGS --link2symlink"
 ARGS="$ARGS --sysvipc"
 ARGS="$ARGS -L"
 
-exec su -p -c "mkdir -p $PROOT_TMP_DIR && export LD_LIBRARY_PATH=$LIB_DIR && export PROOT_TMP_DIR=$PROOT_TMP_DIR && export TERM=${TERM:-xterm-256color} && export LANG=C.UTF-8 && export HOME=/root && exec $PROOT_BIN $ARGS sh $INIT_BIN"
+export RETERM_GUEST_HOSTNAME="$GUEST_HOSTNAME"
+export RETERM_PROOT_ARGS="$ARGS"
+
+exec su -p -c "mkdir -p $PROOT_TMP_DIR && export LD_LIBRARY_PATH=$LIB_DIR && export PROOT_TMP_DIR=$PROOT_TMP_DIR && export TERM=${TERM:-xterm-256color} && export LANG=C.UTF-8 && export HOME=/root && export RETERM_GUEST_HOSTNAME='$GUEST_HOSTNAME' && export RETERM_PROOT_ARGS='$ARGS' && if command -v unshare >/dev/null 2>&1; then exec unshare -u /system/bin/sh -c 'if command -v hostname >/dev/null 2>&1; then hostname \"$RETERM_GUEST_HOSTNAME\" >/dev/null 2>&1 || true; fi; exec \"$PROOT_BIN\" $RETERM_PROOT_ARGS sh \"$INIT_BIN\"'; else exec \"$PROOT_BIN\" $RETERM_PROOT_ARGS sh \"$INIT_BIN\"; fi"

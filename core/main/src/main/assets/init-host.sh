@@ -1,5 +1,20 @@
 ALPINE_DIR=$PREFIX/local/alpine
 
+resolve_guest_hostname() {
+    if [ -r "$ALPINE_DIR/etc/hostname" ]; then
+        IFS= read -r guest_name < "$ALPINE_DIR/etc/hostname" || true
+        guest_name=${guest_name%%[[:space:]]*}
+        if [ -n "$guest_name" ]; then
+            printf '%s' "$guest_name"
+            return 0
+        fi
+    fi
+
+    printf '%s' "alpine"
+}
+
+GUEST_HOSTNAME=$(resolve_guest_hostname)
+
 mkdir -p $ALPINE_DIR
 
 if [ -z "$(ls -A "$ALPINE_DIR" | grep -vE '^(root|tmp)$')" ]; then
@@ -71,4 +86,6 @@ ARGS="$ARGS --link2symlink"
 ARGS="$ARGS --sysvipc"
 ARGS="$ARGS -L"
 
-$LINKER $PREFIX/local/bin/proot $ARGS sh $PREFIX/local/bin/init "$@"
+export RETERM_GUEST_HOSTNAME="$GUEST_HOSTNAME"
+
+exec "$LINKER" "$PREFIX/local/bin/proot" $ARGS env RETERM_GUEST_HOSTNAME="$RETERM_GUEST_HOSTNAME" sh "$PREFIX/local/bin/init" "$@"
