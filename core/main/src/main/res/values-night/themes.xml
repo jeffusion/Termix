@@ -1,5 +1,5 @@
 <resources>
-    <style name="Base.Theme.Karbon" parent="Theme.Material3.Dark.NoActionBar">
+    <style name="Base.Theme.Termix" parent="Theme.Material3.Dark.NoActionBar">
         <!-- Bars -->
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
@@ -13,7 +13,7 @@
         <item name="android:forceDarkAllowed">false</item>
     </style>
     
-    <style name="Theme.Karbon" parent="Base.Theme.Karbon">
+    <style name="Theme.Termix" parent="Base.Theme.Termix">
         <item name="colorPrimary">@color/md_theme_primary</item>
         <item name="colorOnPrimary">@color/md_theme_onPrimary</item>
         <item name="colorPrimaryContainer">@color/md_theme_primaryContainer</item>
@@ -62,12 +62,12 @@
         <item name="colorSurfaceContainerHighest">@color/md_theme_surfaceContainerHighest</item>
     </style>
     
-    <style name="Theme.Karbon.Oled" parent="Theme.Karbon">
+    <style name="Theme.Termix.Oled" parent="Theme.Termix">
         <item name="android:colorBackground">@android:color/black</item>
         <item name="colorSurface">@android:color/black</item>
     </style>
     
-    <style name="Base.Theme.Karbon.Monet" parent="Theme.Material3.DynamicColors.Dark">
+    <style name="Base.Theme.Termix.Monet" parent="Theme.Material3.DynamicColors.Dark">
         <!-- Bars -->
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
@@ -81,7 +81,7 @@
         <item name="android:forceDarkAllowed">false</item>
     </style>
     
-    <style name="Theme.Karbon.Oled.Monet" parent="Base.Theme.Karbon.Monet">
+    <style name="Theme.Termix.Oled.Monet" parent="Base.Theme.Termix.Monet">
         <item name="android:colorBackground">@android:color/black</item>
         <item name="colorSurface">@android:color/black</item>
     </style>

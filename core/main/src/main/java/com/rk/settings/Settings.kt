@@ -1,16 +1,16 @@
-package com.rk.settings
+package com.termix.settings
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Build
 import androidx.appcompat.app.AppCompatDelegate
-import com.rk.libcommons.application
-import com.rk.terminal.model.WorkingMode
-import com.rk.terminal.ui.screens.settings.InputMode
-import com.rk.terminal.ui.screens.settings.LayoutMode
-import com.rk.terminal.ui.screens.settings.CloseLastSessionBehavior
-import com.rk.terminal.ui.screens.settings.ShellType
+import com.termix.libcommons.application
+import com.termix.model.WorkingMode
+import com.termix.ui.screens.settings.InputMode
+import com.termix.ui.screens.settings.LayoutMode
+import com.termix.ui.screens.settings.CloseLastSessionBehavior
+import com.termix.ui.screens.settings.ShellType
 object Settings {
     //Boolean
     var amoled
@@ -113,14 +113,14 @@ object Settings {
         set(value) = Preference.setBoolean(key = "shortcuts_enabled", value)
 
     /** Default modifier for number shortcuts: Alt+1 (only modifier flags are used) */
-    private val DEFAULT_NUMBER_SHORTCUT = com.rk.terminal.ui.screens.terminal.ShortcutBinding(alt = true, keyCode = android.view.KeyEvent.KEYCODE_1)
+    private val DEFAULT_NUMBER_SHORTCUT = com.termix.ui.screens.terminal.ShortcutBinding(alt = true, keyCode = android.view.KeyEvent.KEYCODE_1)
 
-    fun getNumberShortcutBinding(): com.rk.terminal.ui.screens.terminal.ShortcutBinding {
+    fun getNumberShortcutBinding(): com.termix.ui.screens.terminal.ShortcutBinding {
         val raw = Preference.getString(key = "number_shortcut_modifier", default = DEFAULT_NUMBER_SHORTCUT.serialize())
-        return com.rk.terminal.ui.screens.terminal.ShortcutBinding.deserialize(raw)
+        return com.termix.ui.screens.terminal.ShortcutBinding.deserialize(raw)
     }
 
-    fun setNumberShortcutBinding(binding: com.rk.terminal.ui.screens.terminal.ShortcutBinding) {
+    fun setNumberShortcutBinding(binding: com.termix.ui.screens.terminal.ShortcutBinding) {
         Preference.setString(key = "number_shortcut_modifier", value = binding.serialize())
     }
 
@@ -129,12 +129,12 @@ object Settings {
         get() = Preference.getString(key = "terminal_color_scheme", default = "default")
         set(value) = Preference.setString(key = "terminal_color_scheme", value)
 
-    fun getShortcutBinding(action: com.rk.terminal.ui.screens.terminal.ShortcutAction): com.rk.terminal.ui.screens.terminal.ShortcutBinding {
+    fun getShortcutBinding(action: com.termix.ui.screens.terminal.ShortcutAction): com.termix.ui.screens.terminal.ShortcutBinding {
         val raw = Preference.getString(key = action.prefKey, default = action.default.serialize())
-        return com.rk.terminal.ui.screens.terminal.ShortcutBinding.deserialize(raw)
+        return com.termix.ui.screens.terminal.ShortcutBinding.deserialize(raw)
     }
 
-    fun setShortcutBinding(action: com.rk.terminal.ui.screens.terminal.ShortcutAction, binding: com.rk.terminal.ui.screens.terminal.ShortcutBinding) {
+    fun setShortcutBinding(action: com.termix.ui.screens.terminal.ShortcutAction, binding: com.termix.ui.screens.terminal.ShortcutBinding) {
         Preference.setString(key = action.prefKey, value = binding.serialize())
     }
 

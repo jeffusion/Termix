@@ -1,4 +1,4 @@
-package com.rk.resources
+package com.termix.resources
 
 import android.app.Application
 import android.graphics.drawable.Drawable

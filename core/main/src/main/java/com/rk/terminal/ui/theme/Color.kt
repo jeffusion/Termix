@@ -1,4 +1,4 @@
-package com.rk.terminal.ui.theme
+package com.termix.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

@@ -1,4 +1,4 @@
-package com.rk.terminal.ui.components
+package com.termix.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -34,8 +34,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.rk.resources.strings
-import com.rk.terminal.model.WorkingMode
+import com.termix.resources.strings
+import com.termix.model.WorkingMode
 
 enum class TerminalEnvironmentOption(
     val labelRes: Int,

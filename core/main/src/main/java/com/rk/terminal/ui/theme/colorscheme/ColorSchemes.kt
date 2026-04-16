@@ -1,6 +1,6 @@
-package com.rk.terminal.ui.theme.colorscheme
+package com.termix.ui.theme.colorscheme
 
-import com.rk.terminal.ui.theme.colorscheme.TerminalColorScheme.Companion.hex
+import com.termix.ui.theme.colorscheme.TerminalColorScheme.Companion.hex
 
 /**
  * Collection of bundled terminal color schemes.

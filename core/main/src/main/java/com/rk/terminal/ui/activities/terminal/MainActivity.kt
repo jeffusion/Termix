@@ -1,4 +1,4 @@
-package com.rk.terminal.ui.activities.terminal
+package com.termix.ui.activities.terminal
 
 import android.app.Activity
 import android.app.PendingIntent
@@ -31,13 +31,13 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.rk.terminal.service.SessionService
-import com.rk.terminal.ui.navHosts.MainActivityNavHost
-import com.rk.terminal.ui.routes.MainActivityRoutes
-import com.rk.terminal.ui.screens.terminal.TerminalScreen
-import com.rk.terminal.ui.screens.terminal.terminalView
-import com.rk.terminal.ui.theme.KarbonTheme
-import com.rk.terminal.ui.theme.colorscheme.ColorSchemeManager
+import com.termix.service.SessionService
+import com.termix.ui.navHosts.MainActivityNavHost
+import com.termix.ui.routes.MainActivityRoutes
+import com.termix.ui.screens.terminal.TerminalScreen
+import com.termix.ui.screens.terminal.terminalView
+import com.termix.ui.theme.TermixTheme
+import com.termix.ui.theme.colorscheme.ColorSchemeManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
@@ -60,7 +60,7 @@ class MainActivity : ComponentActivity() {
                     // and triggers recomposition of the entire tree when scheme changes
                     val currentColorScheme by ColorSchemeManager.currentScheme
                     
-                    KarbonTheme(terminalColorScheme = currentColorScheme) {
+                    TermixTheme(terminalColorScheme = currentColorScheme) {
                         Surface(modifier = Modifier.fillMaxSize()) {
                             val navController = rememberNavController()
                             MainActivityNavHost(navController = navController, mainActivity = this@MainActivity)

@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.rk.resources"
+    namespace = "com.termix.resources"
     compileSdk = 36
 
     lint.disable += "MissingTranslation"
@@ -35,4 +35,7 @@ dependencies {
     implementation(libs.core.ktx)
     implementation(libs.appcompat)
     implementation(libs.material)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.ext.junit)
+    androidTestImplementation(libs.espresso.core)
 }

@@ -1,4 +1,4 @@
-package com.rk.terminal.ui.screens.customization
+package com.termix.ui.screens.customization
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -40,11 +40,11 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.rk.settings.Settings
-import com.rk.resources.strings
-import com.rk.terminal.ui.theme.colorscheme.ColorSchemeManager
-import com.rk.terminal.ui.theme.colorscheme.ColorSchemes
-import com.rk.terminal.ui.theme.colorscheme.TerminalColorScheme
+import com.termix.settings.Settings
+import com.termix.resources.strings
+import com.termix.ui.theme.colorscheme.ColorSchemeManager
+import com.termix.ui.theme.colorscheme.ColorSchemes
+import com.termix.ui.theme.colorscheme.TerminalColorScheme
 
 /**
  * A composable that displays a horizontal scrollable list of color scheme options.
