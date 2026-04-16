@@ -1,13 +1,13 @@
-package com.rk.terminal.ui.screens.terminal
+package com.termix.ui.screens.terminal
 
 import android.os.Environment
 import androidx.compose.runtime.mutableStateOf
-import com.rk.libcommons.application
-import com.rk.libcommons.archDir
-import com.rk.libcommons.child
-import com.rk.settings.Settings
-import com.rk.terminal.model.WorkingMode
-import com.rk.terminal.App
+import com.termix.libcommons.application
+import com.termix.libcommons.archDir
+import com.termix.libcommons.child
+import com.termix.settings.Settings
+import com.termix.model.WorkingMode
+import com.termix.App
 import java.io.File
 
 object Rootfs {
@@ -47,7 +47,7 @@ object Rootfs {
 
         if (workingMode == WorkingMode.ARCH || workingMode == WorkingMode.ARCH_ROOT) {
             val archBase = archDir()
-            val marker = archBase.parentFile!!.child(".reterminal-arch-installed")
+            val marker = archBase.parentFile!!.child(".termix-arch-installed")
             val hasEtc = archBase.child("etc").exists() || archBase.child("root").child("etc").exists()
             return marker.exists() && hasEtc
         }

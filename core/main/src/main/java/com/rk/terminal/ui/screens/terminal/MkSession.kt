@@ -1,23 +1,23 @@
-package com.rk.terminal.ui.screens.terminal
+package com.termix.ui.screens.terminal
 
 import android.os.Environment
-import com.rk.libcommons.alpineDir
-import com.rk.libcommons.alpineHomeDir
-import com.rk.libcommons.archHomeDir
-import com.rk.libcommons.application
-import com.rk.libcommons.child
-import com.rk.libcommons.createFileIfNot
-import com.rk.libcommons.localBinDir
-import com.rk.libcommons.localDir
-import com.rk.libcommons.localLibDir
-import com.rk.libcommons.pendingCommand
-import com.rk.settings.Settings
-import com.rk.terminal.App
-import com.rk.terminal.App.Companion.getTempDir
-import com.rk.terminal.BuildConfig
-import com.rk.terminal.ui.activities.terminal.MainActivity
-import com.rk.terminal.model.WorkingMode
-import com.rk.terminal.ui.screens.settings.ShellType
+import com.termix.libcommons.alpineDir
+import com.termix.libcommons.alpineHomeDir
+import com.termix.libcommons.archHomeDir
+import com.termix.libcommons.application
+import com.termix.libcommons.child
+import com.termix.libcommons.createFileIfNot
+import com.termix.libcommons.localBinDir
+import com.termix.libcommons.localDir
+import com.termix.libcommons.localLibDir
+import com.termix.libcommons.pendingCommand
+import com.termix.settings.Settings
+import com.termix.App
+import com.termix.App.Companion.getTempDir
+import com.termix.core.BuildConfig
+import com.termix.ui.activities.terminal.MainActivity
+import com.termix.model.WorkingMode
+import com.termix.ui.screens.settings.ShellType
 import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TerminalSession
 import com.termux.terminal.TerminalSessionClient
@@ -128,7 +128,7 @@ object MkSession {
                 ShellType.ASH -> "/bin/ash"
                 else -> "/bin/ash"
             }
-            env.add("RETERM_SHELL=$shellPath")
+            env.add("TERMIX_SHELL=$shellPath")
 
             env.addAll(envVariables.map { "${it.key}=${it.value}" })
 

@@ -1,10 +1,10 @@
-package com.rk.terminal.ui.screens.terminal
+package com.termix.ui.screens.terminal
 
 import android.view.KeyEvent
 import com.blankj.utilcode.util.ClipboardUtils
-import com.rk.settings.Settings
-import com.rk.terminal.ui.activities.terminal.MainActivity
-import com.rk.terminal.ui.screens.settings.CloseLastSessionBehavior
+import com.termix.settings.Settings
+import com.termix.ui.activities.terminal.MainActivity
+import com.termix.ui.screens.settings.CloseLastSessionBehavior
 
 /**
  * Centralized keyboard shortcut handler for the terminal.

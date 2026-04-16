@@ -1,4 +1,4 @@
-package com.rk.terminal.service
+package com.termix.service
 
 import android.app.*
 import android.content.Intent
@@ -10,13 +10,13 @@ import androidx.annotation.RequiresApi
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.app.NotificationCompat
-import com.rk.resources.drawables
-import com.rk.resources.strings
-import com.rk.terminal.App.Companion.getTempDir
-import com.rk.terminal.ui.activities.terminal.MainActivity
-import com.rk.terminal.ui.screens.settings.Settings
-import com.rk.terminal.ui.screens.terminal.MkSession
-import com.rk.terminal.model.WorkingMode
+import com.termix.resources.drawables
+import com.termix.resources.strings
+import com.termix.App.Companion.getTempDir
+import com.termix.ui.activities.terminal.MainActivity
+import com.termix.ui.screens.settings.Settings
+import com.termix.ui.screens.terminal.MkSession
+import com.termix.model.WorkingMode
 import com.termux.terminal.TerminalSession
 import com.termux.terminal.TerminalSessionClient
 
@@ -30,7 +30,7 @@ class SessionService : Service() {
     val sessionTitles = androidx.compose.runtime.mutableStateMapOf<String, String>()
     // Observable map for custom names - triggers UI recomposition
     val sessionCustomNames = androidx.compose.runtime.mutableStateMapOf<String, String>()
-    var currentSession = mutableStateOf(Pair("main",com.rk.settings.Settings.working_Mode))
+    var currentSession = mutableStateOf(Pair("main",com.termix.settings.Settings.working_Mode))
 
     /**
      * Resolve display title with priority chain:
@@ -67,10 +67,10 @@ class SessionService : Service() {
     fun setCustomName(sessionId: String, name: String) {
         if (name.isBlank()) {
             sessionCustomNames.remove(sessionId)
-            com.rk.settings.Settings.removeCustomSessionName(sessionId)
+            com.termix.settings.Settings.removeCustomSessionName(sessionId)
         } else {
             sessionCustomNames[sessionId] = name
-            com.rk.settings.Settings.setCustomSessionName(sessionId, name)
+            com.termix.settings.Settings.setCustomSessionName(sessionId, name)
         }
     }
     private fun cleanupSessionTemp(sessionId: String) {
@@ -105,7 +105,7 @@ class SessionService : Service() {
                 sessionList[id] = workingMode
                 sessionTitles[id] = ""
                 // Restore persisted custom name if exists
-                com.rk.settings.Settings.getCustomSessionName(id)?.let { name ->
+                com.termix.settings.Settings.getCustomSessionName(id)?.let { name ->
                     sessionCustomNames[id] = name
                 }
                 updateNotification()
@@ -128,7 +128,7 @@ class SessionService : Service() {
                 sessionList.remove(id)
                 sessionTitles.remove(id)
                 sessionCustomNames.remove(id)
-                com.rk.settings.Settings.removeCustomSessionName(id)
+                com.termix.settings.Settings.removeCustomSessionName(id)
                 cleanupSessionTemp(id)
                 if (sessions.isEmpty()) {
                     stopSelf()

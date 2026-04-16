@@ -3,7 +3,7 @@ set -e
 
 ARCH_DIR=$PREFIX/local/arch
 ARCH_ROOTFS=$ARCH_DIR
-ARCH_READY_MARKER=$PREFIX/local/.reterminal-arch-installed
+ARCH_READY_MARKER=$PREFIX/local/.termix-arch-installed
 PROOT_BIN=$PREFIX/local/bin/proot
 LIB_DIR=$PREFIX/local/lib
 
@@ -20,10 +20,10 @@ resolve_guest_hostname() {
     printf '%s' "arch"
 }
 
-RETERM_HOST_TTY=$(tty 2>/dev/null || true)
-case "$RETERM_HOST_TTY" in
+TERMIX_HOST_TTY=$(tty 2>/dev/null || true)
+case "$TERMIX_HOST_TTY" in
     ""|"not a tty"*)
-        RETERM_HOST_TTY=
+        TERMIX_HOST_TTY=
         ;;
 esac
 
@@ -41,7 +41,7 @@ for sofile in "$PREFIX/files/"*.so.2; do
 done
 
 if [ ! -f "$ARCH_READY_MARKER" ] || { [ ! -d "$ARCH_DIR/etc" ] && [ ! -d "$ARCH_DIR/root/etc" ]; }; then
-    echo "Arch rootfs is not installed. Open ReTerminal downloader to install Arch Linux."
+    echo "Arch rootfs is not installed. Open Termix downloader to install Arch Linux."
     exit 1
 fi
 
@@ -112,10 +112,10 @@ ARGS="$ARGS --link2symlink"
 ARGS="$ARGS --sysvipc"
 ARGS="$ARGS -L"
 
-export RETERM_GUEST_HOSTNAME="$GUEST_HOSTNAME"
+export TERMIX_GUEST_HOSTNAME="$GUEST_HOSTNAME"
 
-if [ -n "$RETERM_HOST_TTY" ]; then
-    exec "$LINKER" "$PROOT_BIN" $ARGS env RETERM_HOST_TTY="$RETERM_HOST_TTY" RETERM_GUEST_HOSTNAME="$RETERM_GUEST_HOSTNAME" sh "$PREFIX/local/bin/init-arch" "$@"
+if [ -n "$TERMIX_HOST_TTY" ]; then
+    exec "$LINKER" "$PROOT_BIN" $ARGS env TERMIX_HOST_TTY="$TERMIX_HOST_TTY" TERMIX_GUEST_HOSTNAME="$TERMIX_GUEST_HOSTNAME" sh "$PREFIX/local/bin/init-arch" "$@"
 fi
 
-exec "$LINKER" "$PROOT_BIN" $ARGS env RETERM_GUEST_HOSTNAME="$RETERM_GUEST_HOSTNAME" sh "$PREFIX/local/bin/init-arch" "$@"
+exec "$LINKER" "$PROOT_BIN" $ARGS env TERMIX_GUEST_HOSTNAME="$TERMIX_GUEST_HOSTNAME" sh "$PREFIX/local/bin/init-arch" "$@"
