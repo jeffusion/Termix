@@ -1,6 +1,6 @@
 # Arch Linux support research notes
 
-This document captures the community references used before implementing initial Arch Linux support in ReTerminal.
+This document captures the community references used before implementing initial Arch Linux support in Termix.
 
 ## Similar projects and references
 
