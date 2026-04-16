@@ -37,7 +37,7 @@ android {
             val propertiesFilePath = if (isGITHUB_ACTION) {
                 System.getenv("SIGNING_PROPERTIES_FILE") ?: "/tmp/termix-signing.properties"
             } else {
-                "/home/rohit/Android/xed-signing/signing.properties"
+                rootProject.file("signing.properties").absolutePath
             }
             
             val propertiesFile = File(propertiesFilePath)
