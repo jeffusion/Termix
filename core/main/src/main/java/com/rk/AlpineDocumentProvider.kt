@@ -1,4 +1,4 @@
-package com.rk
+package com.termix
 
 import android.content.ComponentName
 import android.content.Context
@@ -13,19 +13,19 @@ import android.provider.DocumentsContract
 import android.provider.DocumentsProvider
 import android.util.Log
 import android.webkit.MimeTypeMap
-import com.rk.libcommons.alpineHomeDir
-import com.rk.libcommons.archHomeDir
-import com.rk.resources.getString
-import com.rk.resources.strings
-import com.rk.settings.Settings
+import com.termix.libcommons.alpineHomeDir
+import com.termix.libcommons.archHomeDir
+import com.termix.resources.getString
+import com.termix.resources.strings
+import com.termix.settings.Settings
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.util.Collections
 import java.util.LinkedList
 import java.util.Locale
-import com.rk.terminal.R
-import com.rk.terminal.model.WorkingMode
+import com.termix.core.R
+import com.termix.model.WorkingMode
 
 class AlpineDocumentProvider : DocumentsProvider() {
     override fun queryRoots(projection: Array<String>?): Cursor {

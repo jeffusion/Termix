@@ -1,4 +1,4 @@
-package com.rk.libcommons
+package com.termix.libcommons
 
 var pendingCommand: TerminalCommand? = null
 

@@ -1,9 +1,9 @@
-package com.rk.crashhandler
+package com.termix.crashhandler
 
 import android.os.Looper
-import com.rk.libcommons.application
-import com.rk.libcommons.child
-import com.rk.libcommons.createFileIfNot
+import com.termix.libcommons.application
+import com.termix.libcommons.child
+import com.termix.libcommons.createFileIfNot
 import kotlin.system.exitProcess
 
 object CrashHandler : Thread.UncaughtExceptionHandler {

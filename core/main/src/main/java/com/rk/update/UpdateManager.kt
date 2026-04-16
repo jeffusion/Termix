@@ -1,9 +1,9 @@
-package com.rk.update
+package com.termix.update
 
-import com.rk.libcommons.application
-import com.rk.libcommons.child
-import com.rk.libcommons.createFileIfNot
-import com.rk.libcommons.localBinDir
+import com.termix.libcommons.application
+import com.termix.libcommons.child
+import com.termix.libcommons.createFileIfNot
+import com.termix.libcommons.localBinDir
 import java.io.File
 
 class UpdateManager {

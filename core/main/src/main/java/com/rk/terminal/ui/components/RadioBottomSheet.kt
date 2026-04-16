@@ -1,4 +1,4 @@
-package com.rk.terminal.ui.components
+package com.termix.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn

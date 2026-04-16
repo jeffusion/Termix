@@ -1,8 +1,8 @@
-package com.rk.terminal.ui.screens.terminal.virtualkeys
+package com.termix.ui.screens.terminal.virtualkeys
 
 import android.view.View
 import android.widget.Button
-import com.rk.terminal.ui.screens.terminal.virtualkeys.VirtualKeysView.IVirtualKeysView
+import com.termix.ui.screens.terminal.virtualkeys.VirtualKeysView.IVirtualKeysView
 import com.termux.terminal.TerminalSession
 
 class VirtualKeyClient(val session: TerminalSession) : IVirtualKeysView {

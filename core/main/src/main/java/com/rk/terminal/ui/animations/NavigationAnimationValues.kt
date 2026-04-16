@@ -1,4 +1,4 @@
-package com.rk.terminal.ui.animations
+package com.termix.ui.animations
 
 object NavigationAnimationValues {
     const val SlideDistance: Int = 50

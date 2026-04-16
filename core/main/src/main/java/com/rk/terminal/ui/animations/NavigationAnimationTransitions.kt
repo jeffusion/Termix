@@ -1,4 +1,4 @@
-package com.rk.terminal.ui.animations
+package com.termix.ui.animations
 
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn

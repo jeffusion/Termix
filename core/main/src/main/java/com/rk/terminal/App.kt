@@ -1,12 +1,13 @@
-package com.rk.terminal
+package com.termix
 
 import android.app.Application
 import android.os.Build
 import android.os.StrictMode
 import com.github.anrwatchdog.ANRWatchDog
-import com.rk.libcommons.application
-import com.rk.resources.Res
-import com.rk.update.UpdateManager
+import com.termix.core.BuildConfig
+import com.termix.libcommons.application
+import com.termix.resources.Res
+import com.termix.update.UpdateManager
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope

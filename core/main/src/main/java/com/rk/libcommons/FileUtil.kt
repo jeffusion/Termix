@@ -1,15 +1,15 @@
-package com.rk.libcommons
+package com.termix.libcommons
 
 import android.content.Context
 import java.io.File
-import com.rk.terminal.BuildConfig
+import com.termix.core.BuildConfig
 
 private fun getFilesDir(): File{
     return if (application == null){
         if (BuildConfig.DEBUG){
-            File("/data/data/com.rk.terminal.debug/files")
+            File("/data/data/com.termix.app.debug/files")
         }else{
-            File("/data/data/com.rk.terminal/files")
+            File("/data/data/com.termix.app/files")
         }
     }else{
         application!!.filesDir

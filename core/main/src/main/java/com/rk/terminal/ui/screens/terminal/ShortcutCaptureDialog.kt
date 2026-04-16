@@ -1,4 +1,4 @@
-package com.rk.terminal.ui.screens.terminal
+package com.termix.ui.screens.terminal
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
@@ -35,8 +35,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.platform.LocalWindowInfo
-import com.rk.resources.strings
-import com.rk.settings.Settings
+import com.termix.resources.strings
+import com.termix.settings.Settings
 
 /**
  * Dialog that captures a keyboard shortcut combination from the user.

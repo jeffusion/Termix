@@ -1,4 +1,4 @@
-package com.rk.terminal.ui.screens.terminal
+package com.termix.ui.screens.terminal
 
 import android.view.KeyEvent
 
