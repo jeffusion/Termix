@@ -15,7 +15,7 @@ plugins {
 
 
 android {
-    namespace = "com.rk.application"
+    namespace = "com.termix.app"
     compileSdk = 36
 
 
@@ -29,7 +29,7 @@ android {
             val isGITHUB_ACTION = System.getenv("GITHUB_ACTIONS") == "true"
             
             val propertiesFilePath = if (isGITHUB_ACTION) {
-                "/tmp/signing.properties"
+                System.getenv("SIGNING_PROPERTIES_FILE") ?: "/tmp/termix-signing.properties"
             } else {
                 "/home/rohit/Android/xed-signing/signing.properties"
             }
@@ -41,7 +41,7 @@ android {
                 keyAlias = properties["keyAlias"] as String?
                 keyPassword = properties["keyPassword"] as String?
                 storeFile = if (isGITHUB_ACTION) {
-                    File("/tmp/xed.keystore")
+                    System.getenv("KEYSTORE_FILE")?.let(::File) ?: File("/tmp/termix-keystore")
                 } else {
                     (properties["storeFile"] as String?)?.let { File(it) }
                 }
@@ -49,6 +49,10 @@ android {
                 storePassword = properties["storePassword"] as String?
             } else {
                 println("Signing properties file not found at $propertiesFilePath")
+                keyAlias = "testkey"
+                keyPassword = "testkey"
+                storeFile = file(layout.buildDirectory.dir("../testkey.keystore"))
+                storePassword = "testkey"
             }
         }
         getByName("debug") {
@@ -69,18 +73,18 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("release")
-            resValue("string","app_name","ReTerminal")
+            resValue("string","app_name","Termix")
         }
         debug{
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-DEBUG"
-            resValue("string","app_name","ReTerminal-Debug")
+            resValue("string","app_name","Termix-Debug")
         }
     }
 
     
     defaultConfig {
-        applicationId = "com.rk.terminal"
+        applicationId = "com.termix.app"
         minSdk = 26
         //noinspection ExpiredTargetSdkVersion
         targetSdk = 28
@@ -93,20 +97,6 @@ android {
         }
     }
 
-    flavorDimensions += "store"
-
-    productFlavors {
-        create("Fdroid") {
-            dimension = "store"
-            targetSdk = 28
-        }
-
-        create("PlayStore") {
-            dimension = "store"
-            targetSdk = 35
-        }
-    }
-    
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

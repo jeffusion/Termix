@@ -1,7 +1,6 @@
 #!/bin/env fish
 git clean -fdx
 chmod +x gradlew
-cp -r ../Xed-Editor/local.properties .
+cp -r ../local.properties .
 ./gradlew clean
-./gradlew assembleRelease
-
+./gradlew :app:assembleRelease
