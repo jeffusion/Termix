@@ -1,13 +1,13 @@
-package com.rk.terminal.ui.theme
+package com.termix.ui.theme
 
 import android.app.Activity
 import android.content.Context
 import android.content.res.Resources
 import androidx.appcompat.app.AppCompatDelegate
 import com.google.android.material.color.DynamicColors
-import com.rk.libcommons.isDarkMode
-import com.rk.settings.Settings
-import com.rk.terminal.R
+import com.termix.libcommons.isDarkMode
+import com.termix.settings.Settings
+import com.termix.core.R
 
 /**
  * A basic helper for applying the correct theme in the app. it manage XML Theme.
@@ -32,10 +32,10 @@ object ThemeManager {
         // apply OLED theme if dark mode and OLED setting is enable
         if (isDarkMode(activity) && Settings.amoled) {
             if (Settings.monet) {
-                activity.setTheme(R.style.Theme_Karbon_Oled_Monet)
+                activity.setTheme(R.style.Theme_Termix_Oled_Monet)
                 return
             }
-            activity.setTheme(R.style.Theme_Karbon_Oled)
+            activity.setTheme(R.style.Theme_Termix_Oled)
             return
         }
         if (Settings.monet) DynamicColors.applyToActivityIfAvailable(activity)

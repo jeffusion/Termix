@@ -1,4 +1,4 @@
-package com.rk.terminal.ui.theme.colorscheme
+package com.termix.ui.theme.colorscheme
 
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
@@ -6,9 +6,9 @@ import androidx.compose.material3.lightColorScheme
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
-import com.rk.libcommons.application
-import com.rk.libcommons.isDarkMode
-import com.rk.settings.Settings
+import com.termix.libcommons.application
+import com.termix.libcommons.isDarkMode
+import com.termix.settings.Settings
 import com.termux.terminal.TerminalColors
 import com.termux.view.TerminalView
 import java.lang.ref.WeakReference

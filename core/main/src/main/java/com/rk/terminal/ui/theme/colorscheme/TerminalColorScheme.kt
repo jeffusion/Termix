@@ -1,4 +1,4 @@
-package com.rk.terminal.ui.theme.colorscheme
+package com.termix.ui.theme.colorscheme
 
 import java.util.Properties
 

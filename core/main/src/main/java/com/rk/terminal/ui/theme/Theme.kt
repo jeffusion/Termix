@@ -1,4 +1,4 @@
-package com.rk.terminal.ui.theme
+package com.termix.ui.theme
 
 import android.app.Activity
 import android.os.Build
@@ -17,10 +17,10 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-import com.rk.libcommons.isDarkMode
-import com.rk.settings.Settings
-import com.rk.terminal.ui.theme.colorscheme.ColorSchemeManager
-import com.rk.terminal.ui.theme.colorscheme.TerminalColorScheme
+import com.termix.libcommons.isDarkMode
+import com.termix.settings.Settings
+import com.termix.ui.theme.colorscheme.ColorSchemeManager
+import com.termix.ui.theme.colorscheme.TerminalColorScheme
 
 /*
  * More Themes
@@ -100,7 +100,7 @@ private val DarkColorScheme =
 
 
 @Composable
-fun KarbonTheme(
+fun TermixTheme(
     darkTheme: Boolean = when (Settings.default_night_mode) {
         AppCompatDelegate.MODE_NIGHT_YES -> true
         AppCompatDelegate.MODE_NIGHT_NO -> false
