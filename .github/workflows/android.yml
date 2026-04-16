@@ -4,6 +4,8 @@ on:
     branches:
       - main
       - dev
+    tags:
+      - 'v*'
     paths-ignore:
       - '**/*.md'
   workflow_dispatch:
@@ -12,6 +14,8 @@ jobs:
   build-release:
     name: Build Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -23,40 +27,37 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: Decode and create xed.keystore
-        run: echo "${{ secrets.KEYSTORE }}" | base64 -d > /tmp/xed.keystore
+      - name: Decode and create termix.keystore
+        run: echo "${{ secrets.KEYSTORE }}" | base64 -d > /tmp/termix-keystore
 
-      - name: Decode and create signing.properties
-        run: echo "${{ secrets.PROP }}" | base64 -d > /tmp/signing.properties
+      - name: Decode and create termix-signing.properties
+        run: echo "${{ secrets.PROP }}" | base64 -d > /tmp/termix-signing.properties
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Set Commit Hash
-        id: commit_hash
-        run: echo "COMMIT_HASH=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
-
       - name: Build with Gradle
-        run: ./gradlew assembleFdroidRelease && mv app/build/outputs/apk/Fdroid/release/*.apk app/reterminal-${{ env.COMMIT_HASH }}.apk
+        run: ./gradlew :app:assembleRelease :app:assembleDebug :app:testDebugUnitTest
         env:
-          KEYSTORE_FILE: /tmp/xed.keystore
-          SIGNING_PROPERTIES_FILE: /tmp/signing.properties
-        continue-on-error: false
+          KEYSTORE_FILE: /tmp/termix-keystore
+          SIGNING_PROPERTIES_FILE: /tmp/termix-signing.properties
+
+      - name: Prepare GitHub Release APK
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        run: cp app/build/outputs/apk/release/*.apk app/termix-${{ github.ref_name }}.apk
+
+      - name: Upload GitHub Release asset
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        uses: softprops/action-gh-release@v2
+        with:
+          files: app/termix-${{ github.ref_name }}.apk
 
       - name: Archive APK
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
         uses: actions/upload-artifact@v4
         with:
-          name: Karbon-Release
-          path: app/reterminal-${{ env.COMMIT_HASH }}.apk
+          name: termix-release-${{ github.sha }}
+          path: app/build/outputs/apk/release/*.apk
 
-      - name: Delete xed.keystore and signing.properties
-        run: rm /tmp/xed.keystore /tmp/signing.properties
-
-      - name: Send APK to Telegram
-        if: ${{ success() && github.event.head_commit.message != '' }}
-        run: |
-          curl -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT }}/sendDocument" \
-          -F chat_id="-1002292589492" \
-          -F message_thread_id="116" \
-          -F caption="${{ github.event.head_commit.message }} by ${{ github.actor }}" \
-          -F document=@"app/reterminal-${{ env.COMMIT_HASH }}.apk"
+      - name: Delete termix temp files
+        run: rm /tmp/termix-keystore /tmp/termix-signing.properties
