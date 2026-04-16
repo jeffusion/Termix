@@ -1,4 +1,4 @@
-package com.rk.libcommons
+package com.termix.libcommons
 
 import android.app.Activity
 import android.view.LayoutInflater
@@ -6,7 +6,7 @@ import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.rk.terminal.R
+import com.termix.core.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope

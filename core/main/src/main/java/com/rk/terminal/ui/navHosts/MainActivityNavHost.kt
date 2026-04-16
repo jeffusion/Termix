@@ -1,4 +1,4 @@
-package com.rk.terminal.ui.navHosts
+package com.termix.ui.navHosts
 
 
 import android.app.Activity
@@ -15,14 +15,14 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.rk.settings.Settings
-import com.rk.terminal.ui.activities.terminal.MainActivity
-import com.rk.terminal.ui.animations.NavigationAnimationTransitions
-import com.rk.terminal.ui.routes.MainActivityRoutes
-import com.rk.terminal.ui.screens.downloader.Downloader
-import com.rk.terminal.ui.screens.settings.Settings
-import com.rk.terminal.ui.screens.terminal.Rootfs
-import com.rk.terminal.ui.screens.terminal.TerminalScreen
+import com.termix.settings.Settings
+import com.termix.ui.activities.terminal.MainActivity
+import com.termix.ui.animations.NavigationAnimationTransitions
+import com.termix.ui.routes.MainActivityRoutes
+import com.termix.ui.screens.downloader.Downloader
+import com.termix.ui.screens.settings.Settings
+import com.termix.ui.screens.terminal.Rootfs
+import com.termix.ui.screens.terminal.TerminalScreen
 
 var showStatusBar = mutableStateOf(Settings.statusBar)
 var horizontal_statusBar = mutableStateOf(Settings.horizontal_statusBar)

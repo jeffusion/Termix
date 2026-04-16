@@ -1,4 +1,4 @@
-package com.rk.terminal.ui.screens.terminal
+package com.termix.ui.screens.terminal
 
 const val hosts = """
 127.0.0.1   localhost.localdomain localhost

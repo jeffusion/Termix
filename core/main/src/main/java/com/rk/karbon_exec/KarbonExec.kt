@@ -1,4 +1,4 @@
-package com.rk.karbon_exec
+package com.termix.karbon_exec
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -9,11 +9,11 @@ import android.os.Handler
 import android.os.Looper
 import androidx.core.content.ContextCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.rk.libcommons.TerminalCommand
-import com.rk.libcommons.application
-import com.rk.libcommons.pendingCommand
-import com.rk.libcommons.toast
-import com.rk.resources.getString
+import com.termix.libcommons.TerminalCommand
+import com.termix.libcommons.application
+import com.termix.libcommons.pendingCommand
+import com.termix.libcommons.toast
+import com.termix.resources.getString
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope

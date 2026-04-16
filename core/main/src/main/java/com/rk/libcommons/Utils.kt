@@ -1,12 +1,12 @@
-package com.rk.libcommons
+package com.termix.libcommons
 
 import android.content.Context
 import android.content.res.Configuration
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.StringRes
-import com.rk.resources.getString
-import com.rk.terminal.BuildConfig
+import com.termix.resources.getString
+import com.termix.core.BuildConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers

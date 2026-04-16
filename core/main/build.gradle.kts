@@ -18,7 +18,7 @@ val gitCommitDate: Provider<String> =
 
 
 android {
-    namespace = "com.rk.terminal"
+    namespace = "com.termix.core"
     android.buildFeatures.buildConfig = true
     compileSdk = 36
 

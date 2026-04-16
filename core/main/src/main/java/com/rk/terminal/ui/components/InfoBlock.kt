@@ -1,4 +1,4 @@
-package com.rk.terminal.ui.components
+package com.termix.ui.components
 
 
 

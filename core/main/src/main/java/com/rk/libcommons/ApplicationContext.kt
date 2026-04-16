@@ -1,4 +1,4 @@
-package com.rk.libcommons
+package com.termix.libcommons
 
 import android.app.Activity
 import android.app.Application

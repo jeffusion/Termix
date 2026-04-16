@@ -1,4 +1,4 @@
-package com.rk.terminal.ui.screens.terminal.virtualkeys;
+package com.termix.ui.screens.terminal.virtualkeys;
 
 import android.view.KeyEvent;
 
