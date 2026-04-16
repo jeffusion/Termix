@@ -28,12 +28,16 @@ jobs:
           cache: gradle
 
       - name: Decode and create termix.keystore
-        if: ${{ secrets.KEYSTORE != '' }}
-        run: echo "${{ secrets.KEYSTORE }}" | base64 -d > /tmp/termix-keystore
+        run: |
+          if [ -n "${{ secrets.KEYSTORE }}" ]; then
+            echo "${{ secrets.KEYSTORE }}" | base64 -d > /tmp/termix-keystore
+          fi
 
       - name: Decode and create termix-signing.properties
-        if: ${{ secrets.PROP != '' }}
-        run: echo "${{ secrets.PROP }}" | base64 -d > /tmp/termix-signing.properties
+        run: |
+          if [ -n "${{ secrets.PROP }}" ]; then
+            echo "${{ secrets.PROP }}" | base64 -d > /tmp/termix-signing.properties
+          fi
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
