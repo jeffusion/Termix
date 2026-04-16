@@ -5,8 +5,8 @@ export PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/system
 export HOME=/root
 
 resolve_runtime_hostname() {
-    if [ -n "$RETERM_GUEST_HOSTNAME" ]; then
-        printf '%s' "$RETERM_GUEST_HOSTNAME"
+    if [ -n "$TERMIX_GUEST_HOSTNAME" ]; then
+        printf '%s' "$TERMIX_GUEST_HOSTNAME"
         return 0
     fi
 
@@ -30,13 +30,13 @@ resolve_runtime_hostname() {
 }
 
 install_hostname_wrapper() {
-    wrapper_dir=/tmp/reterminal-runtime/bin
+    wrapper_dir=/tmp/termix-runtime/bin
     mkdir -p "$wrapper_dir"
     cat > "$wrapper_dir/hostname" <<'EOF'
 #!/bin/sh
 resolve_name() {
-    if [ -n "$RETERM_GUEST_HOSTNAME" ]; then
-        printf '%s\n' "$RETERM_GUEST_HOSTNAME"
+    if [ -n "$TERMIX_GUEST_HOSTNAME" ]; then
+        printf '%s\n' "$TERMIX_GUEST_HOSTNAME"
         return 0
     fi
 
@@ -67,7 +67,7 @@ EOF
 }
 
 RUNTIME_HOSTNAME=$(resolve_runtime_hostname)
-export RETERM_GUEST_HOSTNAME="$RUNTIME_HOSTNAME"
+export TERMIX_GUEST_HOSTNAME="$RUNTIME_HOSTNAME"
 export HOST="$RUNTIME_HOSTNAME"
 export HOSTNAME="$RUNTIME_HOSTNAME"
 install_hostname_wrapper
@@ -86,13 +86,13 @@ if [ -f /etc/pacman.conf ]; then
     sed -i 's/^#DisableSandbox/DisableSandbox/' /etc/pacman.conf || true
 fi
 
-ARCH_INIT_DONE=/etc/reterminal-arch-init.done
-ARCH_INIT_LOCK=/etc/reterminal-arch-init.lock
-ARCH_INIT_FAILED=/etc/reterminal-arch-init.failed
-ARCH_INIT_LOG=/tmp/reterminal-arch-init.log
+ARCH_INIT_DONE=/etc/termix-arch-init.done
+ARCH_INIT_LOCK=/etc/termix-arch-init.lock
+ARCH_INIT_FAILED=/etc/termix-arch-init.failed
+ARCH_INIT_LOG=/tmp/termix-arch-init.log
 
 run_arch_init_in_foreground() {
-    ARCH_INIT_RUNNER=/tmp/reterminal-arch-init.runner.sh
+    ARCH_INIT_RUNNER=/tmp/termix-arch-init.runner.sh
 
     cat > "$ARCH_INIT_RUNNER" <<'EOF'
 #!/bin/sh
@@ -104,7 +104,7 @@ ARCH_INIT_FAILED="$3"
 
 keyring_ready=1
 
-echo "[ReTerminal] Initializing Arch Linux keyring (first boot)..."
+echo "[Termix] Initializing Arch Linux keyring (first boot)..."
 pacman-key --init || keyring_ready=0
 
 case "$(uname -m)" in
@@ -124,10 +124,10 @@ fi
 if [ "$keyring_ready" -eq 1 ]; then
     touch "$ARCH_INIT_DONE"
     rm -f "$ARCH_INIT_FAILED"
-    echo "[ReTerminal] Arch keyring bootstrap completed."
+    echo "[Termix] Arch keyring bootstrap completed."
 else
     date +%s > "$ARCH_INIT_FAILED"
-    echo "[ReTerminal] Arch keyring bootstrap failed; retry on next launch."
+    echo "[Termix] Arch keyring bootstrap failed; retry on next launch."
 fi
 
 rm -f "$ARCH_INIT_LOCK"
@@ -154,7 +154,7 @@ if [ ! -f "$ARCH_INIT_DONE" ]; then
         if [ -f "$ARCH_INIT_LOCK" ]; then
             init_pid=$(cat "$ARCH_INIT_LOCK" 2>/dev/null || true)
             if [ -n "$init_pid" ] && kill -0 "$init_pid" 2>/dev/null; then
-                echo "[ReTerminal] Arch first-boot setup already running; waiting for completion..."
+                echo "[Termix] Arch first-boot setup already running; waiting for completion..."
                 while [ -f "$ARCH_INIT_LOCK" ] && [ ! -f "$ARCH_INIT_DONE" ]; do
                     owner_pid=$(cat "$ARCH_INIT_LOCK" 2>/dev/null || true)
                     if [ -n "$owner_pid" ] && kill -0 "$owner_pid" 2>/dev/null; then
@@ -171,28 +171,28 @@ if [ ! -f "$ARCH_INIT_DONE" ]; then
 
         if ( set -C; printf '%s\n' "$$" > "$ARCH_INIT_LOCK" ) 2>/dev/null; then
             if [ -f "$ARCH_INIT_FAILED" ]; then
-                echo "[ReTerminal] Previous setup attempt failed; retrying in foreground."
+                echo "[Termix] Previous setup attempt failed; retrying in foreground."
                 rm -f "$ARCH_INIT_FAILED"
             fi
 
-            echo "[ReTerminal] Arch first-boot setup is running in foreground."
-            echo "[ReTerminal] Waiting for setup completion before entering shell..."
+            echo "[Termix] Arch first-boot setup is running in foreground."
+            echo "[Termix] Waiting for setup completion before entering shell..."
             run_arch_init_in_foreground
             break
         fi
     done
 
     if [ -f "$ARCH_INIT_DONE" ]; then
-        echo "[ReTerminal] Arch first-boot setup completed."
+        echo "[Termix] Arch first-boot setup completed."
     elif [ -f "$ARCH_INIT_FAILED" ]; then
-        echo "[ReTerminal] Arch first-boot setup failed."
-        echo "[ReTerminal] Setup log: $ARCH_INIT_LOG"
-        echo "[ReTerminal] Resolve errors and restart session to retry."
+        echo "[Termix] Arch first-boot setup failed."
+        echo "[Termix] Setup log: $ARCH_INIT_LOG"
+        echo "[Termix] Resolve errors and restart session to retry."
         exit 1
     else
-        echo "[ReTerminal] Arch first-boot setup did not finish correctly."
-        echo "[ReTerminal] Setup log: $ARCH_INIT_LOG"
-        echo "[ReTerminal] Resolve errors and restart session to retry."
+        echo "[Termix] Arch first-boot setup did not finish correctly."
+        echo "[Termix] Setup log: $ARCH_INIT_LOG"
+        echo "[Termix] Resolve errors and restart session to retry."
         exit 1
     fi
 fi
@@ -217,7 +217,7 @@ reattach_tty_streams() {
             ;;
     esac
 
-    if [ -n "$RETERM_HOST_TTY" ] && [ -e "$RETERM_HOST_TTY" ] && exec 0<>"$RETERM_HOST_TTY" 1>&0 2>&0 && tty >/dev/null 2>&1; then
+    if [ -n "$TERMIX_HOST_TTY" ] && [ -e "$TERMIX_HOST_TTY" ] && exec 0<>"$TERMIX_HOST_TTY" 1>&0 2>&0 && tty >/dev/null 2>&1; then
         return 0
     fi
 
@@ -232,11 +232,11 @@ fi
 launch_interactive_shell() {
     set +e
 
-    if [ -z "$RETERM_SHELL" ]; then
-        RETERM_SHELL=/bin/sh
+    if [ -z "$TERMIX_SHELL" ]; then
+        TERMIX_SHELL=/bin/sh
     fi
 
-    shell_name=$(basename "$RETERM_SHELL")
+    shell_name=$(basename "$TERMIX_SHELL")
 
     if [ "$shell_name" = "bash" ]; then
         if [ -z "$TERM" ] || [ "$TERM" = "dumb" ]; then
@@ -247,23 +247,23 @@ launch_interactive_shell() {
         export PS1="$arch_bash_ps1"
     fi
 
-    if [ -n "$RETERM_SHELL" ] && [ -x "$RETERM_SHELL" ]; then
+    if [ -n "$TERMIX_SHELL" ] && [ -x "$TERMIX_SHELL" ]; then
         reattach_tty_streams || true
         case "$shell_name" in
             bash)
-                exec "$RETERM_SHELL" -i
+                exec "$TERMIX_SHELL" -i
                 ;;
             zsh|ksh)
-                exec "$RETERM_SHELL" -il
+                exec "$TERMIX_SHELL" -il
                 ;;
             sh|ash|dash)
-                exec "$RETERM_SHELL" -i
+                exec "$TERMIX_SHELL" -i
                 ;;
             *)
-                exec "$RETERM_SHELL"
+                exec "$TERMIX_SHELL"
                 ;;
         esac
-        echo "[ReTerminal] Failed to exec RETERM_SHELL=$RETERM_SHELL, falling back..."
+        echo "[Termix] Failed to exec TERMIX_SHELL=$TERMIX_SHELL, falling back..."
     fi
 
     exec /bin/sh -i

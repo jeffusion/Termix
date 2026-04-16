@@ -4,8 +4,8 @@ export PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/share/bin:/usr/share/sbin:/usr/lo
 export HOME=/root
 
 resolve_runtime_hostname() {
-    if [ -n "$RETERM_GUEST_HOSTNAME" ]; then
-        printf '%s' "$RETERM_GUEST_HOSTNAME"
+    if [ -n "$TERMIX_GUEST_HOSTNAME" ]; then
+        printf '%s' "$TERMIX_GUEST_HOSTNAME"
         return 0
     fi
 
@@ -29,13 +29,13 @@ resolve_runtime_hostname() {
 }
 
 install_hostname_wrapper() {
-    wrapper_dir=/tmp/reterminal-runtime/bin
+    wrapper_dir=/tmp/termix-runtime/bin
     mkdir -p "$wrapper_dir"
     cat > "$wrapper_dir/hostname" <<'EOF'
 #!/bin/sh
 resolve_name() {
-    if [ -n "$RETERM_GUEST_HOSTNAME" ]; then
-        printf '%s\n' "$RETERM_GUEST_HOSTNAME"
+    if [ -n "$TERMIX_GUEST_HOSTNAME" ]; then
+        printf '%s\n' "$TERMIX_GUEST_HOSTNAME"
         return 0
     fi
 
@@ -66,7 +66,7 @@ EOF
 }
 
 RUNTIME_HOSTNAME=$(resolve_runtime_hostname)
-export RETERM_GUEST_HOSTNAME="$RUNTIME_HOSTNAME"
+export TERMIX_GUEST_HOSTNAME="$RUNTIME_HOSTNAME"
 export HOST="$RUNTIME_HOSTNAME"
 export HOSTNAME="$RUNTIME_HOSTNAME"
 install_hostname_wrapper
@@ -113,9 +113,9 @@ if [ "$#" -eq 0 ]; then
     export HOSTNAME="$RUNTIME_HOSTNAME"
     export PS1="\[\e]0;\u@$RUNTIME_HOSTNAME:\w\a\]\[\e[38;5;46m\]\u\[\033[39m\]@$RUNTIME_HOSTNAME \[\033[39m\]\w \[\033[0m\]\\$ "
     cd $HOME
-    # Use shell from RETERM_SHELL env var, fallback to bash > ash
-    if [ -n "$RETERM_SHELL" ] && [ -x "$RETERM_SHELL" ]; then
-        exec "$RETERM_SHELL"
+    # Use shell from TERMIX_SHELL env var, fallback to bash > ash
+    if [ -n "$TERMIX_SHELL" ] && [ -x "$TERMIX_SHELL" ]; then
+        exec "$TERMIX_SHELL"
     elif [ -x /bin/bash ]; then
         exec /bin/bash
     else

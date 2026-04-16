@@ -1,4 +1,4 @@
-package com.rk.terminal.service
+package com.termix.service
 
 import android.app.Service
 import android.content.Intent

@@ -3,7 +3,7 @@ set -e
 
 ARCH_DIR=$PREFIX/local/arch
 ARCH_ROOTFS=$ARCH_DIR
-ARCH_READY_MARKER=$PREFIX/local/.reterminal-arch-installed
+ARCH_READY_MARKER=$PREFIX/local/.termix-arch-installed
 PROOT_BIN=$PREFIX/local/bin/proot
 LIB_DIR=$PREFIX/local/lib
 INIT_BIN=$PREFIX/local/bin/init-arch
@@ -35,7 +35,7 @@ for sofile in "$PREFIX/files/"*.so.2; do
 done
 
 if [ ! -f "$ARCH_READY_MARKER" ] || { [ ! -d "$ARCH_DIR/etc" ] && [ ! -d "$ARCH_DIR/root/etc" ]; }; then
-    echo "Arch rootfs is not installed. Open ReTerminal downloader to install Arch Linux."
+    echo "Arch rootfs is not installed. Open Termix downloader to install Arch Linux."
     exit 1
 fi
 
@@ -101,7 +101,7 @@ ARGS="$ARGS --link2symlink"
 ARGS="$ARGS --sysvipc"
 ARGS="$ARGS -L"
 
-export RETERM_GUEST_HOSTNAME="$GUEST_HOSTNAME"
-export RETERM_PROOT_ARGS="$ARGS"
+export TERMIX_GUEST_HOSTNAME="$GUEST_HOSTNAME"
+export TERMIX_PROOT_ARGS="$ARGS"
 
-exec su -p -c "mkdir -p $PROOT_TMP_DIR && export LD_LIBRARY_PATH=$LIB_DIR && export PROOT_TMP_DIR=$PROOT_TMP_DIR && export TERM=${TERM:-xterm-256color} && export LANG=C.UTF-8 && export HOME=/root && export RETERM_GUEST_HOSTNAME='$GUEST_HOSTNAME' && export RETERM_PROOT_ARGS='$ARGS' && if command -v unshare >/dev/null 2>&1; then exec unshare -u /system/bin/sh -c 'if command -v hostname >/dev/null 2>&1; then hostname \"$RETERM_GUEST_HOSTNAME\" >/dev/null 2>&1 || true; fi; exec \"$PROOT_BIN\" $RETERM_PROOT_ARGS sh \"$INIT_BIN\"'; else exec \"$PROOT_BIN\" $RETERM_PROOT_ARGS sh \"$INIT_BIN\"; fi"
+exec su -p -c "mkdir -p $PROOT_TMP_DIR && export LD_LIBRARY_PATH=$LIB_DIR && export PROOT_TMP_DIR=$PROOT_TMP_DIR && export TERM=${TERM:-xterm-256color} && export LANG=C.UTF-8 && export HOME=/root && export TERMIX_GUEST_HOSTNAME='$GUEST_HOSTNAME' && export TERMIX_PROOT_ARGS='$ARGS' && if command -v unshare >/dev/null 2>&1; then exec unshare -u /system/bin/sh -c 'if command -v hostname >/dev/null 2>&1; then hostname \"$TERMIX_GUEST_HOSTNAME\" >/dev/null 2>&1 || true; fi; exec \"$PROOT_BIN\" $TERMIX_PROOT_ARGS sh \"$INIT_BIN\"'; else exec \"$PROOT_BIN\" $TERMIX_PROOT_ARGS sh \"$INIT_BIN\"; fi"

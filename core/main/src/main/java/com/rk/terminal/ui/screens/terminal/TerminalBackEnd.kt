@@ -1,4 +1,4 @@
-package com.rk.terminal.ui.screens.terminal
+package com.termix.ui.screens.terminal
 
 import android.content.res.Configuration
 import android.content.res.Resources
@@ -9,14 +9,14 @@ import android.view.MotionEvent
 import androidx.lifecycle.lifecycleScope
 import com.blankj.utilcode.util.ClipboardUtils
 import com.blankj.utilcode.util.KeyboardUtils
-import com.rk.libcommons.child
-import com.rk.libcommons.createFileIfNot
-import com.rk.libcommons.dpToPx
-import com.rk.settings.Settings
-import com.rk.terminal.ui.activities.terminal.MainActivity
-import com.rk.terminal.ui.screens.settings.CloseLastSessionBehavior
-import com.rk.terminal.ui.screens.terminal.virtualkeys.SpecialButton
-import com.rk.terminal.ui.screens.terminal.virtualkeys.VirtualKeysView
+import com.termix.libcommons.child
+import com.termix.libcommons.createFileIfNot
+import com.termix.libcommons.dpToPx
+import com.termix.settings.Settings
+import com.termix.ui.activities.terminal.MainActivity
+import com.termix.ui.screens.settings.CloseLastSessionBehavior
+import com.termix.ui.screens.terminal.virtualkeys.SpecialButton
+import com.termix.ui.screens.terminal.virtualkeys.VirtualKeysView
 import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TerminalSession
 import com.termux.terminal.TerminalSessionClient

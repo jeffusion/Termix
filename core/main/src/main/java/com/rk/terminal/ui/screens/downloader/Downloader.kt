@@ -1,4 +1,4 @@
-package com.rk.terminal.ui.screens.downloader
+package com.termix.ui.screens.downloader
 
 import android.os.Build
 import androidx.compose.foundation.BorderStroke
@@ -19,14 +19,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.rk.libcommons.*
-import com.rk.resources.strings
-import com.rk.settings.Settings
-import com.rk.terminal.App
-import com.rk.terminal.ui.activities.terminal.MainActivity
-import com.rk.terminal.model.WorkingMode
-import com.rk.terminal.ui.screens.terminal.Rootfs
-import com.rk.terminal.ui.screens.terminal.TerminalScreen
+import com.termix.libcommons.*
+import com.termix.resources.strings
+import com.termix.settings.Settings
+import com.termix.App
+import com.termix.ui.activities.terminal.MainActivity
+import com.termix.model.WorkingMode
+import com.termix.ui.screens.terminal.Rootfs
+import com.termix.ui.screens.terminal.TerminalScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -771,7 +771,7 @@ private data class AbiUrls(
 )
 
 private const val ARCH_EXTRACT_TIMEOUT_MINUTES = 30L
-private const val ARCH_READY_MARKER = ".reterminal-arch-installed"
+private const val ARCH_READY_MARKER = ".termix-arch-installed"
 private const val MAX_INSTALL_LOG_LINES = 220
 private const val NANOS_PER_SECOND = 1_000_000_000.0
 

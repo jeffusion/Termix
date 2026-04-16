@@ -1,4 +1,4 @@
-package com.rk.terminal.model
+package com.termix.model
 
 object WorkingMode {
     const val ALPINE = 0

@@ -86,6 +86,6 @@ ARGS="$ARGS --link2symlink"
 ARGS="$ARGS --sysvipc"
 ARGS="$ARGS -L"
 
-export RETERM_GUEST_HOSTNAME="$GUEST_HOSTNAME"
+export TERMIX_GUEST_HOSTNAME="$GUEST_HOSTNAME"
 
-exec "$LINKER" "$PREFIX/local/bin/proot" $ARGS env RETERM_GUEST_HOSTNAME="$RETERM_GUEST_HOSTNAME" sh "$PREFIX/local/bin/init" "$@"
+exec "$LINKER" "$PREFIX/local/bin/proot" $ARGS env TERMIX_GUEST_HOSTNAME="$TERMIX_GUEST_HOSTNAME" sh "$PREFIX/local/bin/init" "$@"
