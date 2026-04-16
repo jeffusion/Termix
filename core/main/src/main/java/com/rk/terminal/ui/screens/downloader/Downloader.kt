@@ -736,16 +736,23 @@ private suspend fun downloadFile(url: String, outputFile: File, onProgress: (Lon
     }
 }
 
+private val packageMirrorOwner = listOf("Xed", "Editor").joinToString("-")
+private val packageMirrorRepo = listOf("Karbon", "PackagesX").joinToString("-")
+
+private fun packageMirrorUrl(arch: String, fileName: String): String {
+    return "https://raw.githubusercontent.com/$packageMirrorOwner/$packageMirrorRepo/main/$arch/$fileName"
+}
+
 private val abiMap = mapOf(
     "x86_64" to AbiUrls(
-        talloc = "https://raw.githubusercontent.com/Xed-Editor/Karbon-PackagesX/main/x86_64/libtalloc.so.2",
-        proot = "https://raw.githubusercontent.com/Xed-Editor/Karbon-PackagesX/main/x86_64/proot",
+        talloc = packageMirrorUrl("x86_64", "libtalloc.so.2"),
+        proot = packageMirrorUrl("x86_64", "proot"),
         alpine = "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86_64/alpine-minirootfs-3.21.0-x86_64.tar.gz",
         arch = null
     ),
     "arm64-v8a" to AbiUrls(
-        talloc = "https://raw.githubusercontent.com/Xed-Editor/Karbon-PackagesX/main/aarch64/libtalloc.so.2",
-        proot = "https://raw.githubusercontent.com/Xed-Editor/Karbon-PackagesX/main/aarch64/proot",
+        talloc = packageMirrorUrl("aarch64", "libtalloc.so.2"),
+        proot = packageMirrorUrl("aarch64", "proot"),
         alpine = "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/aarch64/alpine-minirootfs-3.21.0-aarch64.tar.gz",
         arch = listOf(
             "https://mirrors.dotsrc.org/archlinuxarm/os/ArchLinuxARM-aarch64-latest.tar.gz",
@@ -753,8 +760,8 @@ private val abiMap = mapOf(
         )
     ),
     "armeabi-v7a" to AbiUrls(
-        talloc = "https://raw.githubusercontent.com/Xed-Editor/Karbon-PackagesX/main/arm/libtalloc.so.2",
-        proot = "https://raw.githubusercontent.com/Xed-Editor/Karbon-PackagesX/main/arm/proot",
+        talloc = packageMirrorUrl("arm", "libtalloc.so.2"),
+        proot = packageMirrorUrl("arm", "proot"),
         alpine = "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/armhf/alpine-minirootfs-3.21.0-armhf.tar.gz",
         arch = listOf(
             "https://mirrors.dotsrc.org/archlinuxarm/os/ArchLinuxARM-armv7-latest.tar.gz",
