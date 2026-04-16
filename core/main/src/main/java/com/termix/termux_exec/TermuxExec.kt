@@ -1,4 +1,4 @@
-package com.termix.karbon_exec
+package com.termix.termux_exec
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -14,6 +14,7 @@ import com.termix.libcommons.application
 import com.termix.libcommons.pendingCommand
 import com.termix.libcommons.toast
 import com.termix.resources.getString
+import com.termix.ui.activities.terminal.MainActivity
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -117,11 +118,7 @@ fun runBashScript(
 
 fun launchInternalTerminal(context: Context, terminalCommand: TerminalCommand) {
     pendingCommand = terminalCommand
-    context.startActivity(
-        Intent(
-            context, Class.forName("com.rk.xededitor.ui.activities.terminal.Terminal")
-        )
-    )
+    context.startActivity(Intent(context, MainActivity::class.java))
 }
 
 fun launchTermux(): Boolean {
