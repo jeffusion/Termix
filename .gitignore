@@ -20,3 +20,5 @@ Todo.md
 **/build
 .vscode
 core/wasm3
+.codex
+.sisyphus
