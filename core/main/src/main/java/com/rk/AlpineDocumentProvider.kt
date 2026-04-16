@@ -33,7 +33,7 @@ class AlpineDocumentProvider : DocumentsProvider() {
             projection
                 ?: DEFAULT_ROOT_PROJECTION
         )
-        val applicationName = "ReTerminal"
+        val applicationName = "Termix"
 
         val baseDir = getBaseDir()
         val row = result.newRow()
