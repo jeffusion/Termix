@@ -1,0 +1,113 @@
+name: APK Diff
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build signed release APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Decode and create termix.keystore
+        run: |
+          if [ -n "${{ secrets.KEYSTORE }}" ]; then
+            echo "${{ secrets.KEYSTORE }}" | base64 -d > /tmp/termix-keystore
+          fi
+
+      - name: Decode and create termix-signing.properties
+        run: |
+          if [ -n "${{ secrets.PROP }}" ]; then
+            echo "${{ secrets.PROP }}" | base64 -d > /tmp/termix-signing.properties
+          fi
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build release APK
+        run: ./gradlew assembleRelease
+        env:
+          KEYSTORE_FILE: /tmp/termix-keystore
+          SIGNING_PROPERTIES_FILE: /tmp/termix-signing.properties
+
+      - name: Upload built APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-apk
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+      - name: Clean up signing files
+        if: always()
+        run: rm -f /tmp/termix-keystore /tmp/termix-signing.properties
+
+  diff:
+    name: Compare with latest release
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download built APK
+        uses: actions/download-artifact@v4
+        with:
+          name: built-apk
+          path: ./built-apk/
+
+      - name: Resolve built APK path
+        run: |
+          shopt -s nullglob
+          files=(./built-apk/*.apk)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "Built APK not found"
+            exit 1
+          fi
+          echo "BUILT_APK=${files[0]}" >> "$GITHUB_ENV"
+          echo "Built APK: ${files[0]}"
+
+      - name: Install apktool and apkdiff
+        run: |
+          curl -LO https://raw.githubusercontent.com/iBotPeaches/Apktool/master/scripts/linux/apktool
+          chmod +x apktool
+          sudo mv apktool /usr/local/bin/
+          curl -LO https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.11.0.jar
+          sudo mv apktool_2.11.0.jar /usr/local/bin/apktool.jar
+          curl -LO https://raw.githubusercontent.com/daniellockyer/apkdiff/refs/heads/master/apkdiff.py
+          chmod +x apkdiff.py
+
+      - name: Download latest release APK
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LATEST_TAG=$(gh release list --limit 1 --json tagName -q '.[0].tagName')
+          if [ -z "$LATEST_TAG" ]; then
+            echo "No releases found in this repository."
+            exit 1
+          fi
+          echo "Latest release tag: $LATEST_TAG"
+          mkdir -p ./release-apk/
+          gh release download "$LATEST_TAG" --pattern "*.apk" --dir ./release-apk/
+
+      - name: Run apkdiff
+        run: |
+          shopt -s nullglob
+          release_files=(./release-apk/*.apk)
+          if [ ${#release_files[@]} -eq 0 ]; then
+            echo "No release APK downloaded."
+            exit 1
+          fi
+          RELEASE_APK="${release_files[0]}"
+          echo "Comparing:"
+          echo "  Built:   $BUILT_APK"
+          echo "  Release: $RELEASE_APK"
+          python apkdiff.py "$BUILT_APK" "$RELEASE_APK"

@@ -1,31 +1,32 @@
-name: Android CI
+name: Release
+
 on:
   push:
-    branches:
-      - main
-      - dev
     tags:
       - 'v*'
-    paths-ignore:
-      - '**/*.md'
-  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
 
 jobs:
   build-release:
-    name: Build Release
+    name: Build and Release
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
+          cache: 'gradle'
 
       - name: Decode and create termix.keystore
         run: |
@@ -42,28 +43,29 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build with Gradle
-        run: ./gradlew :app:assembleRelease :app:assembleDebug :app:testDebugUnitTest
+      - name: Run checks
+        run: ./gradlew testDebugUnitTest lintDebug
         env:
           KEYSTORE_FILE: /tmp/termix-keystore
           SIGNING_PROPERTIES_FILE: /tmp/termix-signing.properties
 
-      - name: Prepare GitHub Release APK
-        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+      - name: Build release APK
+        run: ./gradlew assembleRelease
+        env:
+          KEYSTORE_FILE: /tmp/termix-keystore
+          SIGNING_PROPERTIES_FILE: /tmp/termix-signing.properties
+
+      - name: Prepare release APK
         run: cp app/build/outputs/apk/release/*.apk app/termix-${{ github.ref_name }}.apk
 
-      - name: Upload GitHub Release asset
-        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: app/termix-${{ github.ref_name }}.apk
+          generate_release_notes: true
+          draft: false
+          prerelease: false
 
-      - name: Archive APK
-        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: termix-release-${{ github.sha }}
-          path: app/build/outputs/apk/release/*.apk
-
-      - name: Delete termix temp files
+      - name: Clean up signing files
+        if: always()
         run: rm -f /tmp/termix-keystore /tmp/termix-signing.properties
