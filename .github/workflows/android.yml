@@ -28,9 +28,11 @@ jobs:
           cache: gradle
 
       - name: Decode and create termix.keystore
+        if: ${{ secrets.KEYSTORE != '' }}
         run: echo "${{ secrets.KEYSTORE }}" | base64 -d > /tmp/termix-keystore
 
       - name: Decode and create termix-signing.properties
+        if: ${{ secrets.PROP != '' }}
         run: echo "${{ secrets.PROP }}" | base64 -d > /tmp/termix-signing.properties
 
       - name: Grant execute permission for gradlew
@@ -60,4 +62,4 @@ jobs:
           path: app/build/outputs/apk/release/*.apk
 
       - name: Delete termix temp files
-        run: rm /tmp/termix-keystore /tmp/termix-signing.properties
+        run: rm -f /tmp/termix-keystore /tmp/termix-signing.properties
