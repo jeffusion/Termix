@@ -27,6 +27,12 @@ android {
     signingConfigs {
         create("release") {
             val isGITHUB_ACTION = System.getenv("GITHUB_ACTIONS") == "true"
+            fun useTestKeyFallback() {
+                keyAlias = "testkey"
+                keyPassword = "testkey"
+                storeFile = file(layout.buildDirectory.dir("../testkey.keystore"))
+                storePassword = "testkey"
+            }
             
             val propertiesFilePath = if (isGITHUB_ACTION) {
                 System.getenv("SIGNING_PROPERTIES_FILE") ?: "/tmp/termix-signing.properties"
@@ -38,21 +44,33 @@ android {
             if (propertiesFile.exists()) {
                 val properties = Properties()
                 properties.load(propertiesFile.inputStream())
-                keyAlias = properties["keyAlias"] as String?
-                keyPassword = properties["keyPassword"] as String?
-                storeFile = if (isGITHUB_ACTION) {
-                    System.getenv("KEYSTORE_FILE")?.let(::File) ?: File("/tmp/termix-keystore")
+                val resolvedKeyAlias = properties["keyAlias"] as String?
+                val resolvedKeyPassword = properties["keyPassword"] as String?
+                val resolvedStorePassword = properties["storePassword"] as String?
+                val resolvedStoreFile = if (isGITHUB_ACTION) {
+                    System.getenv("KEYSTORE_FILE")?.takeIf { it.isNotBlank() }?.let(::File) ?: File("/tmp/termix-keystore")
                 } else {
                     (properties["storeFile"] as String?)?.let { File(it) }
                 }
-                
-                storePassword = properties["storePassword"] as String?
+
+                if (
+                    !resolvedKeyAlias.isNullOrBlank() &&
+                    !resolvedKeyPassword.isNullOrBlank() &&
+                    !resolvedStorePassword.isNullOrBlank() &&
+                    resolvedStoreFile?.exists() == true &&
+                    resolvedStoreFile.length() > 0
+                ) {
+                    keyAlias = resolvedKeyAlias
+                    keyPassword = resolvedKeyPassword
+                    storeFile = resolvedStoreFile
+                    storePassword = resolvedStorePassword
+                } else {
+                    println("Signing properties are incomplete at $propertiesFilePath, falling back to testkey")
+                    useTestKeyFallback()
+                }
             } else {
                 println("Signing properties file not found at $propertiesFilePath")
-                keyAlias = "testkey"
-                keyPassword = "testkey"
-                storeFile = file(layout.buildDirectory.dir("../testkey.keystore"))
-                storePassword = "testkey"
+                useTestKeyFallback()
             }
         }
         getByName("debug") {
