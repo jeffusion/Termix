@@ -33,6 +33,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 import java.net.UnknownHostException
+import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToLong
 
@@ -122,10 +123,10 @@ fun Downloader(
             }
 
             val filesToDownload = listOf(
-                "libtalloc.so.2" to listOf(urls.talloc),
-                "proot" to listOf(urls.proot),
-                rootfsFileName to rootfsUrls
-            ).map { (name, urlsForFile) -> DownloadFile(urlsForFile, Rootfs.reTerminal.child(name)) }
+                DownloadFile(listOf(urls.talloc.url), Rootfs.reTerminal.child("libtalloc.so.2"), urls.talloc.sha256),
+                DownloadFile(listOf(urls.proot.url), Rootfs.reTerminal.child("proot"), urls.proot.sha256),
+                DownloadFile(rootfsUrls, Rootfs.reTerminal.child(rootfsFileName))
+            )
 
             needsDownload = filesToDownload.any { !it.outputFile.exists() }
             progressText = if (needsDownload) downloadingStr.format(0) else installingStr
@@ -382,7 +383,11 @@ fun Downloader(
     }
 }
 
-private data class DownloadFile(val urls: List<String>, val outputFile: File)
+private data class DownloadFile(
+    val urls: List<String>,
+    val outputFile: File,
+    val expectedSha256: String? = null
+)
 
 private suspend fun setupEnvironment(
     filesToDownload: List<DownloadFile>,
@@ -416,62 +421,77 @@ private suspend fun setupEnvironment(
                     runOnUiThread {
                         onInstallLog("Detected usable Arch rootfs; skipping arch.tar.gz download")
                     }
-                } else if (!outputFile.exists()) {
-                    val tempOutputFile = outputFile.parentFile!!.child("${outputFile.name}.part")
-                    if (tempOutputFile.exists()) {
-                        tempOutputFile.delete()
-                    }
-
-                    var lastSampleAt = System.nanoTime()
-                    var lastDownloaded = 0L
-                    var smoothedSpeed = 0.0
-
-                    downloadFileWithFallback(file.urls, tempOutputFile) { downloaded, total ->
-                        val now = System.nanoTime()
-                        val deltaNanos = now - lastSampleAt
-                        if (deltaNanos > 0) {
-                            val deltaBytes = (downloaded - lastDownloaded).coerceAtLeast(0L)
-                            val instantSpeed = (deltaBytes.toDouble() * NANOS_PER_SECOND) / deltaNanos.toDouble()
-                            smoothedSpeed = if (smoothedSpeed == 0.0) {
-                                instantSpeed
-                            } else {
-                                (smoothedSpeed * 0.75) + (instantSpeed * 0.25)
-                            }
-                            lastSampleAt = now
-                            lastDownloaded = downloaded
-                        }
-
-                        val fileProgress = if (total > 0L) {
-                            (downloaded.toFloat() / total.toFloat()).coerceIn(0f, 1f)
-                        } else {
-                            0f
-                        }
-                        val overallProgress = ((completedFiles + fileProgress) / totalFiles.toFloat()).coerceIn(0f, 1f)
+                } else {
+                    if (outputFile.exists() && file.expectedSha256 != null && !outputFile.matchesSha256(file.expectedSha256)) {
                         runOnUiThread {
-                            onProgress(
-                                DownloadProgressSnapshot(
-                                    currentFileName = outputFile.name,
-                                    completedFiles = completedFiles,
-                                    totalFiles = totalFiles,
-                                    fileProgress = fileProgress,
-                                    overallProgress = overallProgress,
-                                    downloadedBytes = downloaded,
-                                    totalBytes = total,
-                                    bytesPerSecond = smoothedSpeed.roundToLong().coerceAtLeast(0L),
-                                    isRootfs = isRootfsFile
-                                )
-                            )
+                            onInstallLog("Checksum mismatch for existing ${outputFile.name}; redownloading")
+                        }
+                        if (!outputFile.delete()) {
+                            throw Exception("Checksum mismatch for ${outputFile.name} and failed to delete stale file")
                         }
                     }
 
-                    if (outputFile.exists()) {
-                        outputFile.delete()
-                    }
+                    if (!outputFile.exists()) {
+                        val tempOutputFile = outputFile.parentFile!!.child("${outputFile.name}.part")
+                        if (tempOutputFile.exists()) {
+                            tempOutputFile.delete()
+                        }
 
-                    if (!tempOutputFile.renameTo(outputFile)) {
-                        throw Exception("Failed to finalize download: ${outputFile.name}")
+                        var lastSampleAt = System.nanoTime()
+                        var lastDownloaded = 0L
+                        var smoothedSpeed = 0.0
+
+                        downloadFileWithFallback(file.urls, tempOutputFile) { downloaded, total ->
+                            val now = System.nanoTime()
+                            val deltaNanos = now - lastSampleAt
+                            if (deltaNanos > 0) {
+                                val deltaBytes = (downloaded - lastDownloaded).coerceAtLeast(0L)
+                                val instantSpeed = (deltaBytes.toDouble() * NANOS_PER_SECOND) / deltaNanos.toDouble()
+                                smoothedSpeed = if (smoothedSpeed == 0.0) {
+                                    instantSpeed
+                                } else {
+                                    (smoothedSpeed * 0.75) + (instantSpeed * 0.25)
+                                }
+                                lastSampleAt = now
+                                lastDownloaded = downloaded
+                            }
+
+                            val fileProgress = if (total > 0L) {
+                                (downloaded.toFloat() / total.toFloat()).coerceIn(0f, 1f)
+                            } else {
+                                0f
+                            }
+                            val overallProgress = ((completedFiles + fileProgress) / totalFiles.toFloat()).coerceIn(0f, 1f)
+                            runOnUiThread {
+                                onProgress(
+                                    DownloadProgressSnapshot(
+                                        currentFileName = outputFile.name,
+                                        completedFiles = completedFiles,
+                                        totalFiles = totalFiles,
+                                        fileProgress = fileProgress,
+                                        overallProgress = overallProgress,
+                                        downloadedBytes = downloaded,
+                                        totalBytes = total,
+                                        bytesPerSecond = smoothedSpeed.roundToLong().coerceAtLeast(0L),
+                                        isRootfs = isRootfsFile
+                                    )
+                                )
+                            }
+                        }
+
+                        if (outputFile.exists()) {
+                            outputFile.delete()
+                        }
+
+                        file.expectedSha256?.let { expectedSha256 ->
+                            verifySha256OrThrow(tempOutputFile, expectedSha256)
+                        }
+
+                        if (!tempOutputFile.renameTo(outputFile)) {
+                            throw Exception("Failed to finalize download: ${outputFile.name}")
+                        }
+                        downloadedNow = true
                     }
-                    downloadedNow = true
                 }
                 completedFiles++
                 runOnUiThread {
@@ -736,23 +756,60 @@ private suspend fun downloadFile(url: String, outputFile: File, onProgress: (Lon
     }
 }
 
-private val packageMirrorOwner = listOf("Xed", "Editor").joinToString("-")
-private val packageMirrorRepo = listOf("Karbon", "PackagesX").joinToString("-")
+private fun verifySha256OrThrow(file: File, expectedSha256: String) {
+    val actualSha256 = file.sha256()
+    if (!actualSha256.equals(expectedSha256, ignoreCase = true)) {
+        throw Exception(
+            "Checksum mismatch for ${file.name}: expected $expectedSha256 but got $actualSha256"
+        )
+    }
+}
 
-private fun packageMirrorUrl(arch: String, fileName: String): String {
-    return "https://raw.githubusercontent.com/$packageMirrorOwner/$packageMirrorRepo/main/$arch/$fileName"
+private fun File.matchesSha256(expectedSha256: String): Boolean {
+    return sha256().equals(expectedSha256, ignoreCase = true)
+}
+
+private fun File.sha256(): String {
+    val digest = MessageDigest.getInstance("SHA-256")
+    inputStream().use { input ->
+        val buffer = ByteArray(8 * 1024)
+        var bytesRead: Int
+        while (input.read(buffer).also { bytesRead = it } != -1) {
+            digest.update(buffer, 0, bytesRead)
+        }
+    }
+    return digest.digest().joinToString("") { "%02x".format(it) }
+}
+
+private const val RUNTIME_RELEASE_BASE_URL =
+    "https://github.com/jeffusion/termix-runtime-binaries/releases/download/runtime-v1.0.0"
+
+private fun runtimeReleaseUrl(assetName: String): String {
+    return "$RUNTIME_RELEASE_BASE_URL/$assetName"
 }
 
 private val abiMap = mapOf(
     "x86_64" to AbiUrls(
-        talloc = packageMirrorUrl("x86_64", "libtalloc.so.2"),
-        proot = packageMirrorUrl("x86_64", "proot"),
+        talloc = RuntimeAsset(
+            url = runtimeReleaseUrl("libtalloc.so.2-x86_64"),
+            sha256 = "cfa05bd07fb7e7fe2adda4a0309275d4e03e0102be368b02b800bba4b0cad4ae"
+        ),
+        proot = RuntimeAsset(
+            url = runtimeReleaseUrl("proot-x86_64"),
+            sha256 = "eca2f07a87bd0ae4acb0547de867e43d08c176daa09ff9f59573e0a53c92011e"
+        ),
         alpine = "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86_64/alpine-minirootfs-3.21.0-x86_64.tar.gz",
         arch = null
     ),
     "arm64-v8a" to AbiUrls(
-        talloc = packageMirrorUrl("aarch64", "libtalloc.so.2"),
-        proot = packageMirrorUrl("aarch64", "proot"),
+        talloc = RuntimeAsset(
+            url = runtimeReleaseUrl("libtalloc.so.2-aarch64"),
+            sha256 = "368262b345120a4e09ae961f4bda92e0cdfc18004145317f923abe403df6facf"
+        ),
+        proot = RuntimeAsset(
+            url = runtimeReleaseUrl("proot-aarch64"),
+            sha256 = "f25ac0a0258e18671c699154cdc88001fbd1cbe09df75c960a1ee8dad29d88ae"
+        ),
         alpine = "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/aarch64/alpine-minirootfs-3.21.0-aarch64.tar.gz",
         arch = listOf(
             "https://mirrors.dotsrc.org/archlinuxarm/os/ArchLinuxARM-aarch64-latest.tar.gz",
@@ -760,8 +817,14 @@ private val abiMap = mapOf(
         )
     ),
     "armeabi-v7a" to AbiUrls(
-        talloc = packageMirrorUrl("arm", "libtalloc.so.2"),
-        proot = packageMirrorUrl("arm", "proot"),
+        talloc = RuntimeAsset(
+            url = runtimeReleaseUrl("libtalloc.so.2-arm"),
+            sha256 = "f7e46ad757494f73e1b2bfe4bab51b28176741e23c92be8924e4dc4a5ca6921e"
+        ),
+        proot = RuntimeAsset(
+            url = runtimeReleaseUrl("proot-arm"),
+            sha256 = "2c1e1a6008aabedeb8f9404091e39624bdc21b0640ed846e12b141966a43dc72"
+        ),
         alpine = "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/armhf/alpine-minirootfs-3.21.0-armhf.tar.gz",
         arch = listOf(
             "https://mirrors.dotsrc.org/archlinuxarm/os/ArchLinuxARM-armv7-latest.tar.gz",
@@ -771,10 +834,15 @@ private val abiMap = mapOf(
 )
 
 private data class AbiUrls(
-    val talloc: String,
-    val proot: String,
+    val talloc: RuntimeAsset,
+    val proot: RuntimeAsset,
     val alpine: String,
     val arch: List<String>?
+)
+
+private data class RuntimeAsset(
+    val url: String,
+    val sha256: String
 )
 
 private const val ARCH_EXTRACT_TIMEOUT_MINUTES = 30L
