@@ -22,3 +22,5 @@ Todo.md
 core/wasm3
 .codex
 .sisyphus
+__pycache__/
+*.pyc
