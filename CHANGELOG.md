@@ -1,3 +1,11 @@
+## [1.2.1](https://github.com/jeffusion/Termix/compare/v1.2.0...v1.2.1) (2026-04-18)
+
+
+### Bug Fixes
+
+* **release:** publish apk in semantic-release workflow ([6914f7a](https://github.com/jeffusion/Termix/commit/6914f7aad9912515ae4bb59fbca16f91ac07a1c9))
+* **release:** use GH_TOKEN for semantic-release preview ([51e77e5](https://github.com/jeffusion/Termix/commit/51e77e5ef990d90ff4ca1a49da84a9f57321344a))
+
 # [1.2.0](https://github.com/jeffusion/Termix/compare/v1.1.0...v1.2.0) (2026-04-18)
 
 
