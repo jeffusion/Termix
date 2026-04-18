@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+from typing import cast
 
 from PIL import Image
 
@@ -26,6 +27,11 @@ ADAPTIVE_SIZES = {
 BACKGROUND_COLOR = (12, 15, 16, 255)
 FOREGROUND_SCALE = 0.80
 MONOCHROME_SCALE = 0.55
+BACKGROUND_DISTANCE_THRESHOLD = 28
+
+
+def get_rgba_pixel(image: Image.Image, x: int, y: int) -> tuple[int, int, int, int]:
+    return cast(tuple[int, int, int, int], image.getpixel((x, y)))
 
 
 def render_contain(
@@ -45,23 +51,59 @@ def render_contain(
 
 
 def build_monochrome_mask(source: Image.Image) -> Image.Image:
-    rgba = source.load()
     monochrome = Image.new("RGBA", source.size, (255, 255, 255, 0))
-    mono_pixels = monochrome.load()
 
-    for y in range(source.height):
-        for x in range(source.width):
-            r, g, b, a = rgba[x, y]
+    edge_samples: list[tuple[int, int, int]] = []
+    width = source.width
+    height = source.height
+
+    for x in range(width):
+        for y in (0, height - 1):
+            r, g, b, a = get_rgba_pixel(source, x, y)
+            if a > 0:
+                edge_samples.append((r, g, b))
+
+    for y in range(height):
+        for x in (0, width - 1):
+            r, g, b, a = get_rgba_pixel(source, x, y)
+            if a > 0:
+                edge_samples.append((r, g, b))
+
+    background_color: tuple[int, int, int] | None = None
+    if edge_samples:
+        red, green, blue = (
+            round(sum(channel) / len(edge_samples)) for channel in zip(*edge_samples)
+        )
+        background_color = (red, green, blue)
+
+    for y in range(height):
+        for x in range(width):
+            r, g, b, a = get_rgba_pixel(source, x, y)
             if a == 0:
                 continue
 
-            luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
-            if g > 110 and g > r + 25 and g > b + 20 and luminance > 70:
-                mono_pixels[x, y] = (255, 255, 255, 255)
+            if background_color is None:
+                monochrome.putpixel((x, y), (255, 255, 255, 255))
+                continue
+
+            color_distance = sum(
+                abs(channel - background_channel)
+                for channel, background_channel in zip((r, g, b), background_color)
+            )
+            if color_distance >= BACKGROUND_DISTANCE_THRESHOLD:
+                monochrome.putpixel((x, y), (255, 255, 255, 255))
 
     bbox = monochrome.getbbox()
     if bbox is None:
-        raise RuntimeError("Unable to derive monochrome launcher icon from source logo")
+        alpha_mask = source.getchannel("A")
+        bbox = alpha_mask.getbbox()
+        if bbox is None:
+            raise RuntimeError(
+                "Unable to derive monochrome launcher icon from source logo"
+            )
+
+        monochrome = Image.new("RGBA", source.size, (255, 255, 255, 0))
+        monochrome.putalpha(alpha_mask)
 
     return monochrome.crop(bbox)
 
