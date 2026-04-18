@@ -1,3 +1,15 @@
+# [1.2.0](https://github.com/jeffusion/Termix/compare/v1.1.0...v1.2.0) (2026-04-18)
+
+
+### Bug Fixes
+
+* **branding:** make monochrome icon generation color-agnostic ([a1a02f8](https://github.com/jeffusion/Termix/commit/a1a02f851e29a559963780b8385a7395b793636c))
+
+
+### Features
+
+* **github:** add issue forms for bug reports and feature requests ([2a6e2fb](https://github.com/jeffusion/Termix/commit/2a6e2fbd351bee772e3e44b1978038d9941af3db))
+
 # [1.1.0](https://github.com/jeffusion/Termix/compare/v1.0.0...v1.1.0) (2026-04-18)
 
 
