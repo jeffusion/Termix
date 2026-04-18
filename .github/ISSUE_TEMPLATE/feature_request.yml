@@ -1,0 +1,60 @@
+name: Feature request
+description: Suggest an improvement or new capability for Termix
+title: "[Feature] "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement for Termix.
+
+        Please explain the problem, proposed solution, and why it matters.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: Describe the problem or limitation you are trying to solve.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the behavior, workflow, or feature you would like to see.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe any alternative solutions, workarounds, or designs you have considered.
+    validations:
+      required: false
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use case
+      description: Explain why this would be valuable for users or contributors.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched the existing issues to avoid creating a duplicate request.
+          required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Add any mockups, screenshots, references, or extra context here.
+    validations:
+      required: false
