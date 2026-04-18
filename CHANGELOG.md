@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/jeffusion/Termix/compare/v1.0.0...v1.1.0) (2026-04-18)
+
+
+### Features
+
+* **branding:** add logo asset workflow and refresh launcher images ([c3be7b5](https://github.com/jeffusion/Termix/commit/c3be7b54f7f69d7e429702d3dc5ae906a1b29a86))
+
 # 1.0.0 (2026-04-17)
 
 
