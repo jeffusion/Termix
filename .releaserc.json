@@ -8,7 +8,7 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "bash scripts/bump-version.sh ${nextRelease.version} && ./gradlew app:lintDebug testDebugUnitTest assembleRelease && bash scripts/prepare-release-apk.sh ${nextRelease.version}"
+        "prepareCmd": "env -u GITHUB_TOKEN bash -c 'bash scripts/bump-version.sh ${nextRelease.version} && ./gradlew app:lintDebug testDebugUnitTest assembleRelease && bash scripts/prepare-release-apk.sh ${nextRelease.version}'"
       }
     ],
     [
