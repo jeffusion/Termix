@@ -13,6 +13,7 @@ import androidx.core.app.NotificationCompat
 import com.termix.resources.drawables
 import com.termix.resources.strings
 import com.termix.App.Companion.getTempDir
+import com.termix.crashhandler.CrashHandler
 import com.termix.ui.activities.terminal.MainActivity
 import com.termix.ui.screens.settings.Settings
 import com.termix.ui.screens.terminal.MkSession
@@ -21,6 +22,7 @@ import com.termux.terminal.TerminalSession
 import com.termux.terminal.TerminalSessionClient
 
 class SessionService : Service() {
+    private val diagnosticId = Integer.toHexString(System.identityHashCode(this))
     private val sessions = linkedMapOf<String, TerminalSession>()
     // Ordered list of session IDs for UI display
     val sessionOrder = mutableStateListOf<String>()
@@ -131,6 +133,7 @@ class SessionService : Service() {
                 com.termix.settings.Settings.removeCustomSessionName(id)
                 cleanupSessionTemp(id)
                 if (sessions.isEmpty()) {
+                    CrashHandler.event("SessionService[$diagnosticId].stopSelf reason=last_session_closed")
                     stopSelf()
                 } else {
                     updateNotification()
@@ -150,10 +153,17 @@ class SessionService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder {
+        CrashHandler.event("SessionService[$diagnosticId].onBind")
         return binder
     }
 
+    override fun onUnbind(intent: Intent?): Boolean {
+        CrashHandler.event("SessionService[$diagnosticId].onUnbind")
+        return super.onUnbind(intent)
+    }
+
     override fun onDestroy() {
+        CrashHandler.event("SessionService[$diagnosticId].onDestroy sessions=${sessions.size}")
         sessions.keys.toList().forEach { cleanupSessionTemp(it) }
         sessions.forEach { s -> s.value.finishIfRunning() }
         super.onDestroy()
@@ -161,6 +171,7 @@ class SessionService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        CrashHandler.event("SessionService[$diagnosticId].onCreate")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createNotificationChannel()
         }
@@ -168,20 +179,25 @@ class SessionService : Service() {
 
     private fun promoteToForeground() {
         val notification = createNotification()
+        CrashHandler.event("SessionService[$diagnosticId].foreground.request")
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
         } else {
             startForeground(1, notification)
         }
+        CrashHandler.event("SessionService[$diagnosticId].foreground.started")
     }
 
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val exit = intent?.action == "ACTION_EXIT"
+        CrashHandler.event("SessionService[$diagnosticId].onStartCommand startId=$startId flags=$flags exit=$exit sessions=${sessions.size}")
         when (intent?.action) {
             "ACTION_EXIT" -> {
                 sessions.keys.toList().forEach { cleanupSessionTemp(it) }
                 sessions.forEach { s -> s.value.finishIfRunning() }
+                CrashHandler.event("SessionService[$diagnosticId].stopSelf reason=notification_exit startId=$startId")
                 stopSelf()
             }
             else -> promoteToForeground()

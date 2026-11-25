@@ -31,6 +31,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.termix.crashhandler.CrashHandler
 import com.termix.service.SessionService
 import com.termix.ui.navHosts.MainActivityNavHost
 import com.termix.ui.routes.MainActivityRoutes
@@ -43,8 +44,10 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 class MainActivity : ComponentActivity() {
-    var sessionBinder:SessionService.SessionBinder? = null
+    var sessionBinder by mutableStateOf<SessionService.SessionBinder?>(null)
     var isBound = false
+    private val diagnosticId = Integer.toHexString(System.identityHashCode(this))
+    private var contentInitialized = false
 
 
     private val serviceConnection = object : ServiceConnection {
@@ -52,7 +55,12 @@ class MainActivity : ComponentActivity() {
             val binder = service as SessionService.SessionBinder
             sessionBinder = binder
             isBound = true
+            val serviceId = Integer.toHexString(System.identityHashCode(binder.getService()))
+            CrashHandler.event("MainActivity[$diagnosticId].onServiceConnected service=$serviceId")
 
+            // Preserve the settings route when a system activity stops and restarts this activity.
+            if (contentInitialized) return
+            contentInitialized = true
             lifecycleScope.launch(Dispatchers.Main){
                 setContent {
                     // Read color scheme state at the ROOT of the Compose tree
@@ -95,23 +103,27 @@ class MainActivity : ComponentActivity() {
         override fun onServiceDisconnected(name: ComponentName?) {
             isBound = false
             sessionBinder = null
+            CrashHandler.event("MainActivity[$diagnosticId].onServiceDisconnected")
         }
     }
 
     override fun onStart() {
         super.onStart()
+        CrashHandler.event("MainActivity[$diagnosticId].onStart request=SessionService")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(Intent(this, SessionService::class.java))
         }else{
             startService(Intent(this, SessionService::class.java))
         }
         Intent(this, SessionService::class.java).also { intent ->
-            bindService(intent, serviceConnection, BIND_AUTO_CREATE)
+            val accepted = bindService(intent, serviceConnection, BIND_AUTO_CREATE)
+            CrashHandler.event("MainActivity[$diagnosticId].bindService accepted=$accepted")
         }
     }
 
     override fun onStop() {
         super.onStop()
+        CrashHandler.event("MainActivity[$diagnosticId].onStop connected=$isBound")
         if (isBound) {
             unbindService(serviceConnection)
             isBound = false

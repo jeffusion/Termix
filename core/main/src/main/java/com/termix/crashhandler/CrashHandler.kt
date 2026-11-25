@@ -1,39 +1,48 @@
 package com.termix.crashhandler
 
-import android.os.Looper
-import com.termix.libcommons.application
-import com.termix.libcommons.child
-import com.termix.libcommons.createFileIfNot
+import android.content.Context
+import android.os.Process
+import com.github.anrwatchdog.ANRError
 import kotlin.system.exitProcess
 
-object CrashHandler : Thread.UncaughtExceptionHandler {
+object CrashHandler {
+    @Volatile
+    private var store: DiagnosticStore? = null
 
-    override fun uncaughtException(thread: Thread, ex: Throwable) {
-        runCatching {
+    @Synchronized
+    fun install(context: Context) {
+        if (store != null) return
 
-        }.onFailure {
-            it.printStackTrace()
-            exitProcess(1)
-        }
-
-        if (Looper.myLooper() != null) {
-            while (true) {
-                try {
-                    Looper.loop()
-                    return
-                } catch (t: Throwable) {
-                    Thread{
-                        t.printStackTrace()
-                        logErrorOrExit(t)
-                    }.start()
+        val diagnostics = DiagnosticStore(context.applicationContext)
+        val previous = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, error ->
+            try {
+                runCatching {
+                    if (error is ANRError) {
+                        diagnostics.recordAnr(error, error.duration)
+                    } else {
+                        diagnostics.recordCrash(thread, error)
+                    }
+                }
+            } finally {
+                if (previous != null) {
+                    previous.uncaughtException(thread, error)
+                } else {
+                    Process.killProcess(Process.myPid())
+                    exitProcess(10)
                 }
             }
         }
+        store = diagnostics
+        event("Application.onCreate")
     }
-}
 
-fun logErrorOrExit(throwable: Throwable){
-    runCatching {
-        application!!.filesDir.child("crash.log").createFileIfNot().appendText(throwable.toString())
-    }.onFailure { it.printStackTrace();exitProcess(-1) }
+    /** Record a fixed event label and safe structured values. */
+    fun event(message: String) {
+        store?.event(message)
+    }
+
+    /** Reads local storage and system exit history. Call from an I/O dispatcher. */
+    fun report(context: Context): String =
+        (store ?: DiagnosticStore(context.applicationContext)).report()
 }

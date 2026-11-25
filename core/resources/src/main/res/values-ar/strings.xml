@@ -60,4 +60,23 @@
     <string name="permissions">الأذونات</string>
     <string name="shortcut_switch_by_number">التبديل السريع بالرقم</string>
     <string name="shortcut_switch_by_number_desc">التبديل إلى الجلسة N بالمعدِّل + 1–9</string>
+    <string name="diagnostic_log_title">سجلات التشخيص</string>
+    <string name="diagnostic_log_description">معاينة السجلات ومشاركتها</string>
+    <string name="diagnostic_log_preparing">جارٍ التحضير…</string>
+    <string name="diagnostic_log_share">مشاركة التقرير</string>
+    <string name="diagnostic_log_read_failed">تعذّرت قراءة تقرير التشخيص.</string>
+    <string name="diagnostic_log_share_failed">تعذّرت مشاركة تقرير التشخيص.</string>
+    <string name="settings_terminal_and_sessions">الطرفية والجلسات</string>
+    <string name="settings_terminal_summary">البيئة الافتراضية، الصدفة، سلوك الجلسة</string>
+    <string name="settings_keyboard_and_input">لوحة المفاتيح والإدخال</string>
+    <string name="settings_keyboard_summary">أوضاع الإدخال، المفاتيح الافتراضية، الاختصارات</string>
+    <string name="settings_appearance_and_layout">المظهر والتخطيط</string>
+    <string name="settings_appearance_summary">حجم الخط، الألوان، الخلفية، التخطيط</string>
+    <string name="settings_permissions_summary">أذونات التخزين</string>
+    <string name="settings_help_and_diagnostics">المساعدة والتشخيص</string>
+    <string name="settings_startup">إعدادات بدء التشغيل</string>
+    <string name="settings_sessions">إعدادات الجلسات</string>
+    <string name="settings_root_environment">%1$s (root)</string>
+    <string name="settings_back">رجوع</string>
+    <string name="settings_done">تم</string>
 </resources>

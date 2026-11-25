@@ -108,4 +108,23 @@
     <string name="permissions">权限</string>
     <string name="shortcut_switch_by_number">数字键快速切换</string>
     <string name="shortcut_switch_by_number_desc">按修饰键 + 1–9 切换到对应会话</string>
+    <string name="diagnostic_log_title">诊断日志</string>
+    <string name="diagnostic_log_description">预览并分享日志</string>
+    <string name="diagnostic_log_preparing">正在准备…</string>
+    <string name="diagnostic_log_share">分享报告</string>
+    <string name="diagnostic_log_read_failed">无法读取诊断报告。</string>
+    <string name="diagnostic_log_share_failed">无法分享诊断报告。</string>
+    <string name="settings_terminal_and_sessions">终端与会话</string>
+    <string name="settings_terminal_summary">默认环境、Shell、会话行为</string>
+    <string name="settings_keyboard_and_input">键盘与输入</string>
+    <string name="settings_keyboard_summary">输入模式、虚拟按键、快捷键</string>
+    <string name="settings_appearance_and_layout">外观与布局</string>
+    <string name="settings_appearance_summary">字号、配色、壁纸、界面布局</string>
+    <string name="settings_permissions_summary">存储权限</string>
+    <string name="settings_help_and_diagnostics">帮助与诊断</string>
+    <string name="settings_startup">启动设置</string>
+    <string name="settings_sessions">会话设置</string>
+    <string name="settings_root_environment">%1$s（Root）</string>
+    <string name="settings_back">返回</string>
+    <string name="settings_done">完成</string>
 </resources>

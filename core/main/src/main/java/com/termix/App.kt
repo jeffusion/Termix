@@ -1,10 +1,12 @@
 package com.termix
 
 import android.app.Application
+import android.content.Context
 import android.os.Build
 import android.os.StrictMode
 import com.github.anrwatchdog.ANRWatchDog
 import com.termix.core.BuildConfig
+import com.termix.crashhandler.CrashHandler
 import com.termix.libcommons.application
 import com.termix.resources.Res
 import com.termix.update.UpdateManager
@@ -29,11 +31,17 @@ class App : Application() {
         }
     }
 
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(base)
+        // Content providers can be queried before Application.onCreate.
+        application = this
+        Res.application = this
+    }
+
     @OptIn(DelicateCoroutinesApi::class)
     override fun onCreate() {
         super.onCreate()
-        application = this
-        Res.application = this
+        CrashHandler.install(this)
 
         GlobalScope.launch(Dispatchers.IO) {
             getTempDir().apply {
@@ -41,7 +49,6 @@ class App : Application() {
             }
         }
 
-        //Thread.setDefaultUncaughtExceptionHandler(CrashHandler)
         ANRWatchDog().start()
 
         UpdateManager().onUpdate()
