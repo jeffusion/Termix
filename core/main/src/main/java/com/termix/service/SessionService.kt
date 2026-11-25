@@ -164,6 +164,9 @@ class SessionService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createNotificationChannel()
         }
+    }
+
+    private fun promoteToForeground() {
         val notification = createNotification()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -181,6 +184,7 @@ class SessionService : Service() {
                 sessions.forEach { s -> s.value.finishIfRunning() }
                 stopSelf()
             }
+            else -> promoteToForeground()
         }
         return super.onStartCommand(intent, flags, startId)
     }
