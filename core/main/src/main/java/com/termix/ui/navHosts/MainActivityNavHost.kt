@@ -7,6 +7,7 @@ import android.os.Build
 import android.view.Window
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -83,14 +84,18 @@ fun MainActivityNavHost(modifier: Modifier = Modifier,navController: NavHostCont
                     UpdateStatusBar(mainActivity, show = showStatusBar.value)
                 }
 
-                TerminalScreen(mainActivityActivity = mainActivity, navController = navController)
+                mainActivity.sessionBinder?.let { binder ->
+                    key(binder) {
+                        TerminalScreen(mainActivityActivity = mainActivity, navController = navController)
+                    }
+                }
             }else{
                 Downloader(mainActivity = mainActivity, navController = navController)
             }
         }
         composable(MainActivityRoutes.Settings.route) {
             UpdateStatusBar(mainActivity,show = true)
-            Settings(navController = navController, mainActivity = mainActivity)
+            Settings(navController = navController)
         }
     }
 }

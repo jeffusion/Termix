@@ -9,6 +9,7 @@ import android.view.MotionEvent
 import androidx.lifecycle.lifecycleScope
 import com.blankj.utilcode.util.ClipboardUtils
 import com.blankj.utilcode.util.KeyboardUtils
+import com.termix.crashhandler.CrashHandler
 import com.termix.libcommons.child
 import com.termix.libcommons.createFileIfNot
 import com.termix.libcommons.dpToPx
@@ -43,7 +44,7 @@ class TerminalBackEnd(val terminal: TerminalView,val activity: MainActivity) : T
     }
     
     override fun onSessionFinished(finishedSession: TerminalSession) {
-
+        CrashHandler.event("TerminalSession.finished exitStatus=${finishedSession.exitStatus}")
     }
     
     override fun onCopyTextToClipboard(session: TerminalSession, text: String) {

@@ -111,4 +111,23 @@
     <string name="permissions">Permissions</string>
     <string name="shortcut_switch_by_number">Quick Switch by Number</string>
     <string name="shortcut_switch_by_number_desc">Switch to session N with modifier + 1–9</string>
+    <string name="diagnostic_log_title">Diagnostic logs</string>
+    <string name="diagnostic_log_description">Preview and share logs</string>
+    <string name="diagnostic_log_preparing">Preparing…</string>
+    <string name="diagnostic_log_share">Share report</string>
+    <string name="diagnostic_log_read_failed">Could not read the diagnostic report.</string>
+    <string name="diagnostic_log_share_failed">Could not share the diagnostic report.</string>
+    <string name="settings_terminal_and_sessions">Terminal &amp; sessions</string>
+    <string name="settings_terminal_summary">Default environment, shell, session behavior</string>
+    <string name="settings_keyboard_and_input">Keyboard &amp; input</string>
+    <string name="settings_keyboard_summary">Input modes, virtual keys, shortcuts</string>
+    <string name="settings_appearance_and_layout">Appearance &amp; layout</string>
+    <string name="settings_appearance_summary">Text size, colors, wallpaper, layout</string>
+    <string name="settings_permissions_summary">Storage access</string>
+    <string name="settings_help_and_diagnostics">Help &amp; diagnostics</string>
+    <string name="settings_startup">Startup settings</string>
+    <string name="settings_sessions">Session settings</string>
+    <string name="settings_root_environment">%1$s (root)</string>
+    <string name="settings_back">Back</string>
+    <string name="settings_done">Done</string>
 </resources>
