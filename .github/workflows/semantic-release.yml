@@ -174,12 +174,21 @@ jobs:
             }
 
       - name: Semantic Release
+        id: publish
         if: steps.current-main.outputs.matches == 'true'
+        continue-on-error: true
         run: ./node_modules/.bin/semantic-release
         env:
           GITHUB_TOKEN: ${{ steps.release-app-token.outputs.token }}
           KEYSTORE_FILE: ${{ runner.temp }}/termix-signing/termix-keystore
           SIGNING_PROPERTIES_FILE: ${{ runner.temp }}/termix-signing/termix-signing.properties
+
+      - name: Recover incomplete GitHub Release
+        if: steps.publish.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ steps.release-app-token.outputs.token }}
+          RELEASE_SHA: ${{ needs.verify.outputs.sha }}
+        run: bash scripts/recover-release.sh "$RELEASE_SHA"
 
       - name: Clean up signing files
         if: always()
