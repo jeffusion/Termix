@@ -1,3 +1,16 @@
+# [1.3.0](https://github.com/jeffusion/Termix/compare/v1.2.1...v1.3.0) (2026-11-25)
+
+
+### Bug Fixes
+
+* **ci:** publish validated builds with a dedicated GitHub App ([172cfd1](https://github.com/jeffusion/Termix/commit/172cfd1d049978465b31496b378a379dad9f3163))
+* **service:** restore the terminal foreground service on start ([0b79dc5](https://github.com/jeffusion/Termix/commit/0b79dc5baa6e59f1aaf13832129f4ab82cec6aab))
+
+
+### Features
+
+* **settings:** group preferences and add diagnostic reports ([a62c38c](https://github.com/jeffusion/Termix/commit/a62c38cf1410b3cb945e341dadfb564cc8f54a63))
+
 ## [1.2.1](https://github.com/jeffusion/Termix/compare/v1.2.0...v1.2.1) (2026-04-18)
 
 
