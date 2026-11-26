@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/jeffusion/Termix/compare/v1.3.0...v1.4.0) (2026-11-26)
+
+
+### Features
+
+* **audio:** support playback in Linux sessions ([00d51ab](https://github.com/jeffusion/Termix/commit/00d51abff2b5baf35e6e9a258f37a1a85eb6e34d))
+
 # [1.3.0](https://github.com/jeffusion/Termix/compare/v1.2.1...v1.3.0) (2026-11-25)
 
 
