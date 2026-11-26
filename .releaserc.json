@@ -21,7 +21,7 @@
     [
       "@semantic-release/github",
       {
-        "assets": ["app/termix-v*.apk"]
+        "assets": ["app/termix-v*.apk", "third_party/termux-audio/termix-audio-sources.tar.xz"]
       }
     ]
   ]

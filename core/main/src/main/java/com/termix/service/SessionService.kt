@@ -24,6 +24,7 @@ import com.termux.terminal.TerminalSessionClient
 class SessionService : Service() {
     private val diagnosticId = Integer.toHexString(System.identityHashCode(this))
     private val sessions = linkedMapOf<String, TerminalSession>()
+    private var destroyed = false
     // Ordered list of session IDs for UI display
     val sessionOrder = mutableStateListOf<String>()
     // Map for storing workingMode per session
@@ -62,6 +63,15 @@ class SessionService : Service() {
         return sessionList[sessionId]
     }
 
+    internal fun stopAudioWhenUnused() {
+        if (destroyed) return
+        val hasLinuxSession = sessions.any { (id, session) ->
+            val mode = sessionList[id]
+            mode != null && PulseAudioServer.supportsMode(mode) && session.isRunning
+        }
+        if (!hasLinuxSession) PulseAudioServer.stop()
+    }
+
     fun updateTerminalTitle(sessionId: String, title: String) {
         sessionTitles[sessionId] = title
     }
@@ -98,6 +108,7 @@ class SessionService : Service() {
             sessionList.clear()
             sessionTitles.clear()
             sessionCustomNames.clear()
+            PulseAudioServer.stop()
             updateNotification()
         }
         fun createSession(id: String, client: TerminalSessionClient, activity: MainActivity,workingMode:Int): TerminalSession {
@@ -128,6 +139,7 @@ class SessionService : Service() {
                 sessions.remove(id)
                 sessionOrder.remove(id)
                 sessionList.remove(id)
+                stopAudioWhenUnused()
                 sessionTitles.remove(id)
                 sessionCustomNames.remove(id)
                 com.termix.settings.Settings.removeCustomSessionName(id)
@@ -163,9 +175,11 @@ class SessionService : Service() {
     }
 
     override fun onDestroy() {
+        destroyed = true
         CrashHandler.event("SessionService[$diagnosticId].onDestroy sessions=${sessions.size}")
         sessions.keys.toList().forEach { cleanupSessionTemp(it) }
         sessions.forEach { s -> s.value.finishIfRunning() }
+        PulseAudioServer.stop()
         super.onDestroy()
     }
 
@@ -197,6 +211,7 @@ class SessionService : Service() {
             "ACTION_EXIT" -> {
                 sessions.keys.toList().forEach { cleanupSessionTemp(it) }
                 sessions.forEach { s -> s.value.finishIfRunning() }
+                PulseAudioServer.stop()
                 CrashHandler.event("SessionService[$diagnosticId].stopSelf reason=notification_exit startId=$startId")
                 stopSelf()
             }

@@ -68,6 +68,8 @@ Termix 内置了对多种运行环境的支持，无需复杂配置即可在 And
 - **Android Shell**：直接使用设备原生 Shell
 - **Root 模式**：在支持 Root 的设备上，可直接以 Root 权限运行 Alpine 或 Arch 环境
 
+普通 Alpine 会话在 ARM64 和 x86_64 上支持音频输出，普通 Arch 会话在 ARM64 上也支持。Alpine 用 `apk add mpv` 安装播放器，Arch 用 `pacman -Syu mpv`，然后运行 `mpv --no-video file.mp3`。
+
 ### 深度自定义
 - **配色方案**：内置多款精选终端配色，支持根据系统深色模式自动切换，并允许通过 `colors.properties` 进行高级自定义
 - **自定义字体**：支持导入任意 `.ttf` 字体文件，打造专属终端显示风格
@@ -267,6 +269,8 @@ make all        # 先刷新需要维护的资源，再构建测试包
 ## 开源许可
 
 Termix 采用 [MIT License](LICENSE) 开源许可。
+
+内置音频运行时附带各自的许可声明。对应源码和构建配方见[音频源码归档](third_party/termux-audio/termix-audio-sources.tar.xz)，GitHub Release 也会随 APK 提供这份归档。
 
 ```
 Copyright (c) 2024 Rohit Kushvaha

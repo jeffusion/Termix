@@ -17,6 +17,7 @@ import com.termix.App.Companion.getTempDir
 import com.termix.core.BuildConfig
 import com.termix.ui.activities.terminal.MainActivity
 import com.termix.model.WorkingMode
+import com.termix.service.PulseAudioServer
 import com.termix.ui.screens.settings.ShellType
 import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TerminalSession
@@ -151,12 +152,38 @@ object MkSession {
             val args: Array<String>
 
             val shell = if (pendingCommand == null) {
-                args = when (workingMode) {
-                    WorkingMode.ALPINE -> arrayOf("-c", initFile.absolutePath)
-                    WorkingMode.ALPINE_ROOT -> arrayOf("-c", localBinDir().child("init-root").absolutePath)
-                    WorkingMode.ARCH -> arrayOf("-c", localBinDir().child("init-arch-host").absolutePath)
-                    WorkingMode.ARCH_ROOT -> arrayOf("-c", localBinDir().child("init-arch-root").absolutePath)
-                    else -> arrayOf()
+                val init = when (workingMode) {
+                    WorkingMode.ALPINE -> initFile
+                    WorkingMode.ALPINE_ROOT -> localBinDir().child("init-root")
+                    WorkingMode.ARCH -> localBinDir().child("init-arch-host")
+                    WorkingMode.ARCH_ROOT -> localBinDir().child("init-arch-root")
+                    else -> null
+                }
+                val readyFile = sessionTmpDir.resolve("pulse-ready-${System.nanoTime()}")
+                val pulseServer = if (PulseAudioServer.supportsMode(workingMode)) {
+                    PulseAudioServer.start(activity, readyFile)
+                } else {
+                    null
+                }
+                args = when {
+                    init == null -> emptyArray()
+                    pulseServer == null -> arrayOf("-c", init.absolutePath)
+                    else -> {
+                        // Wait off the UI thread while the service extracts and starts PulseAudio.
+                        arrayOf(
+                            "sh", "-c",
+                            """
+                            attempt=0
+                            while [ ! -f "${'$'}2" ] && [ "${'$'}attempt" -lt 20 ]; do
+                                sleep 0.1
+                                attempt=${'$'}((attempt + 1))
+                            done
+                            [ ! -f "${'$'}2" ] || export PULSE_SERVER="${'$'}3"
+                            exec /system/bin/sh "${'$'}1"
+                            """.trimIndent(),
+                            "sh", init.absolutePath, readyFile.absolutePath, pulseServer,
+                        )
+                    }
                 }
                 "/system/bin/sh"
             } else{

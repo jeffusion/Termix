@@ -45,6 +45,7 @@ class TerminalBackEnd(val terminal: TerminalView,val activity: MainActivity) : T
     
     override fun onSessionFinished(finishedSession: TerminalSession) {
         CrashHandler.event("TerminalSession.finished exitStatus=${finishedSession.exitStatus}")
+        activity.sessionBinder?.getService()?.stopAudioWhenUnused()
     }
     
     override fun onCopyTextToClipboard(session: TerminalSession, text: String) {
