@@ -24,11 +24,15 @@ release_subject="^chore\(release\): ($number\.$number\.$number) \[skip ci\]$"
 version=${BASH_REMATCH[1]}
 tag="v$version"
 apk="app/termix-$tag.apk"
+audio_sources="third_party/termux-audio/termix-audio-sources.tar.xz"
+release_assets=("$apk" "$audio_sources")
 
 version_name=$(git show "$release_sha:app/build.gradle.kts" |
   sed -nE 's/^[[:space:]]*versionName[[:space:]]*=[[:space:]]*"([^"]*)"[[:space:]]*$/\1/p')
 [[ "$version_name" == "$version" ]] || fail 'The committed Android version does not match the release version.'
 [[ -f "$apk" && ! -L "$apk" && -s "$apk" ]] || fail "No completed APK found at $apk."
+[[ -f "$audio_sources" && ! -L "$audio_sources" && -s "$audio_sources" ]] ||
+  fail "No audio runtime source archive found at $audio_sources."
 notes=$(git show -s --format=%b "$release_sha")
 [[ "$notes" =~ [^[:space:]] ]] || fail "The release commit for $tag has no release notes."
 
@@ -62,14 +66,14 @@ matching_releases() {
       end'
 }
 
-apk_size=$(stat -c '%s' -- "$apk")
-apk_sum=$(sha256sum -- "$apk")
-
 verify_asset() {
-  jq -e --arg name "${apk##*/}" --argjson size "$apk_size" --arg digest "sha256:${apk_sum%% *}" '
+  local asset=$1 size sum
+  size=$(stat -c '%s' -- "$asset")
+  sum=$(sha256sum -- "$asset")
+  jq -e --arg name "${asset##*/}" --argjson size "$size" --arg digest "sha256:${sum%% *}" '
     [.assets[] | select(.name == $name)] |
     length == 1 and (.[0] | .state == "uploaded" and .size == $size and .digest == $digest)
-  ' > /dev/null || fail "GitHub Release $tag does not have the matching APK."
+  ' > /dev/null || fail "GitHub Release $tag does not have the matching ${asset##*/}."
 }
 
 releases=$(matching_releases)
@@ -82,17 +86,25 @@ if [[ "$releases" == '[]' ]]; then
   ' <<< "$draft") || fail "Could not verify the identity of the new $tag draft."
   printf 'Created GitHub Release draft %s with ID %s.\n' "$tag" "$draft_id"
 
-  curl --fail --silent --show-error --max-time 180 --header @- \
-    --header 'Content-Type: application/vnd.android.package-archive' --data-binary "@$apk" \
-    "https://uploads.github.com/$repo/releases/$draft_id/assets?name=${apk##*/}" \
-    > /dev/null <<< "Authorization: Bearer $GH_TOKEN" ||
-    fail "APK upload failed. GitHub Release draft $draft_id remains unpublished."
+  for asset in "${release_assets[@]}"; do
+    content_type=application/x-xz
+    if [[ "$asset" == "$apk" ]]; then
+      content_type=application/vnd.android.package-archive
+    fi
+    curl --fail --silent --show-error --max-time 180 --header @- \
+      --header "Content-Type: $content_type" --data-binary "@$asset" \
+      "https://uploads.github.com/$repo/releases/$draft_id/assets?name=${asset##*/}" \
+      > /dev/null <<< "Authorization: Bearer $GH_TOKEN" ||
+      fail "${asset##*/} upload failed. GitHub Release draft $draft_id remains unpublished."
+  done
 
   draft=$(gh api "$repo/releases/$draft_id")
   jq -e --arg tag "$tag" --argjson id "$draft_id" '
     .id == $id and .tag_name == $tag and .draft == true and .prerelease == false
   ' <<< "$draft" > /dev/null || fail "GitHub Release $draft_id is no longer the expected $tag draft."
-  verify_asset <<< "$draft"
+  for asset in "${release_assets[@]}"; do
+    verify_asset "$asset" <<< "$draft"
+  done
   verify_remote_tag
   gh api --method PATCH "$repo/releases/$draft_id" -F draft=false -f make_latest=legacy > /dev/null
   published=$(gh api "$repo/releases/$draft_id")
@@ -104,6 +116,8 @@ fi
 jq -e --arg tag "$tag" '
   .tag_name == $tag and .draft == false and .prerelease == false and (.published_at | type == "string" and length > 0)
 ' <<< "$published" > /dev/null || fail "GitHub Release $tag is not a published stable release."
-verify_asset <<< "$published"
+for asset in "${release_assets[@]}"; do
+  verify_asset "$asset" <<< "$published"
+done
 
-printf 'Verified GitHub Release %s with the matching APK.\n' "$tag"
+printf 'Verified GitHub Release %s with the matching APK and audio source archive.\n' "$tag"

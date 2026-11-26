@@ -22,4 +22,11 @@ if [ "${#apks[@]}" -ne 1 ]; then
   exit 1
 fi
 
+audio_sources="third_party/termux-audio/termix-audio-sources.tar.xz"
+if [[ ! -f "$audio_sources" || -L "$audio_sources" || ! -s "$audio_sources" ]]; then
+  echo "No audio runtime source archive found at $audio_sources" >&2
+  exit 1
+fi
+(cd third_party/termux-audio && sha256sum --strict -c termix-audio-sources.tar.xz.sha256)
+
 cp "${apks[0]}" "app/termix-v${VERSION}.apk"

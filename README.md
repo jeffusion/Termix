@@ -68,6 +68,8 @@ Termix ships with built-in support for several environments, giving you a full L
 - **Android Shell** — Direct access to the device's native shell.
 - **Root mode** — On rooted devices, run Alpine or Arch sessions with root privileges.
 
+Regular Alpine sessions on ARM64 and x86_64 and regular Arch sessions on ARM64 can play audio through Android using a bundled PulseAudio server. Install `mpv` with `apk add mpv` on Alpine or `pacman -Syu mpv` on Arch, then run `mpv --no-video file.mp3`.
+
 ### Deep Customization
 - **Color schemes** — Curated built-in palettes with automatic dark-mode adaptation; advanced users can customize via `colors.properties`.
 - **Custom fonts** — Import any `.ttf` font file to personalize your terminal.
@@ -264,6 +266,8 @@ Contributions of all kinds are welcome!
 ## License
 
 Termix is licensed under the [MIT License](LICENSE).
+
+The bundled audio runtime includes its own license notices. The corresponding source and build recipes are available in [the audio source archive](third_party/termux-audio/termix-audio-sources.tar.xz) and alongside the APK in GitHub Releases.
 
 ```
 Copyright (c) 2024 Rohit Kushvaha
