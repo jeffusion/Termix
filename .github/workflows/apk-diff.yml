@@ -89,14 +89,14 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          LATEST_TAG=$(gh release list --limit 1 --json tagName -q '.[0].tagName')
+          LATEST_TAG=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq '.tag_name')
           if [ -z "$LATEST_TAG" ]; then
             echo "No releases found in this repository."
             exit 1
           fi
           echo "Latest release tag: $LATEST_TAG"
           mkdir -p ./release-apk/
-          gh release download "$LATEST_TAG" --pattern "*.apk" --dir ./release-apk/
+          gh release download "$LATEST_TAG" --repo "$GITHUB_REPOSITORY" --pattern "termix-${LATEST_TAG}.apk" --dir ./release-apk/
 
       - name: Run apkdiff
         run: |

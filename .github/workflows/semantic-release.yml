@@ -9,6 +9,9 @@ on:
 permissions:
   contents: read
 
+env:
+  TERMIX_RELEASE_PHASE: migration
+
 jobs:
   verify:
     name: Verify successful main CI
@@ -35,8 +38,15 @@ jobs:
             }
 
             const { data: main } = await github.rest.git.getRef({ ...context.repo, ref: 'heads/main' });
-            if (main.object.sha !== run.head_sha) {
-              core.info('Skipping release because main has advanced since this CI run.');
+            let eligible = main.object.sha === run.head_sha;
+            if (!eligible && process.env.TERMIX_RELEASE_PHASE === 'migration') {
+              const { data: comparison } = await github.rest.repos.compareCommitsWithBasehead({
+                ...context.repo, basehead: `${run.head_sha}...${main.object.sha}`, per_page: 1,
+              });
+              eligible = comparison.status === 'ahead';
+            }
+            if (!eligible) {
+              core.info('Skipping release because this CI commit is no longer eligible on main.');
               return;
             }
 
@@ -60,11 +70,19 @@ jobs:
           RELEASE_SHA: ${{ needs.verify.outputs.sha }}
         with:
           script: |
+            const sha = process.env.RELEASE_SHA;
             const { data: main } = await github.rest.git.getRef({ ...context.repo, ref: 'heads/main' });
-            if (main.object.sha === process.env.RELEASE_SHA) {
+            let eligible = main.object.sha === sha;
+            if (!eligible && process.env.TERMIX_RELEASE_PHASE === 'migration') {
+              const { data: comparison } = await github.rest.repos.compareCommitsWithBasehead({
+                ...context.repo, basehead: `${sha}...${main.object.sha}`, per_page: 1,
+              });
+              eligible = comparison.status === 'ahead';
+            }
+            if (eligible) {
               core.setOutput('matches', 'true');
             } else {
-              core.info('Skipping release because main has advanced since this CI run.');
+              core.info('Skipping release because this CI commit is no longer eligible on main.');
             }
 
       - name: Checkout verified release commit
@@ -82,46 +100,58 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          case "$TERMIX_RELEASE_PHASE" in
+            migration|stable) ;;
+            *) echo '::error::Invalid Termix release phase.'; exit 1 ;;
+          esac
           git switch --create main "$RELEASE_SHA"
 
+      - name: Check for a published migration prerelease
+        if: steps.queued-main.outputs.matches == 'true' && env.TERMIX_RELEASE_PHASE == 'migration'
+        id: migration-existing
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ needs.verify.outputs.sha }}
+        run: bash scripts/publish-migration-release.sh --check-published
+
       - name: Set up JDK 17
-        if: steps.queued-main.outputs.matches == 'true'
+        if: steps.queued-main.outputs.matches == 'true' && steps.migration-existing.outputs.published != 'true'
         uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9
         with:
           java-version: '17'
           distribution: temurin
 
       - name: Set up Node.js
-        if: steps.queued-main.outputs.matches == 'true'
+        if: steps.queued-main.outputs.matches == 'true' && env.TERMIX_RELEASE_PHASE == 'stable'
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '24'
 
       - name: Grant execute permission for gradlew
-        if: steps.queued-main.outputs.matches == 'true'
+        if: steps.queued-main.outputs.matches == 'true' && steps.migration-existing.outputs.published != 'true'
         run: chmod +x gradlew
 
       - name: Install release tooling
-        if: steps.queued-main.outputs.matches == 'true'
+        if: steps.queued-main.outputs.matches == 'true' && env.TERMIX_RELEASE_PHASE == 'stable'
         run: |
           npm install --no-save --package-lock=false --ignore-scripts \
             semantic-release@25.0.9 @semantic-release/changelog@7.0.0 \
             @semantic-release/exec@7.1.0 @semantic-release/git@11.0.1
 
-      - name: Prepare optional Android signing files
-        if: steps.queued-main.outputs.matches == 'true'
+      - name: Prepare required Android signing files
+        if: steps.queued-main.outputs.matches == 'true' && steps.migration-existing.outputs.published != 'true'
         env:
           KEYSTORE: ${{ secrets.KEYSTORE }}
           PROP: ${{ secrets.PROP }}
+          TERMIX_RELEASE_CERT_SHA256: ${{ vars.RELEASE_CERT_SHA256 }}
         run: |
           set -euo pipefail
-          if [[ -z "$KEYSTORE" && -z "$PROP" ]]; then
-            exit 0
-          fi
           if [[ -z "$KEYSTORE" || -z "$PROP" ]]; then
-            echo "::error::Set both KEYSTORE and PROP for release signing, or leave both unset to use the existing signing fallback."
+            echo "::error::Set both KEYSTORE and PROP for release signing."
             exit 1
           fi
+          source scripts/release-signing.sh
+          load_release_signing
 
           umask 077
           signing_dir="$RUNNER_TEMP/termix-signing"
@@ -132,8 +162,16 @@ jobs:
           test -s "$signing_dir/termix-keystore"
           test -s "$signing_dir/termix-signing.properties"
 
+      - name: Build and verify Android migration APK
+        if: steps.queued-main.outputs.matches == 'true' && env.TERMIX_RELEASE_PHASE == 'migration' && steps.migration-existing.outputs.published != 'true'
+        env:
+          KEYSTORE_FILE: ${{ runner.temp }}/termix-signing/termix-keystore
+          SIGNING_PROPERTIES_FILE: ${{ runner.temp }}/termix-signing/termix-signing.properties
+          TERMIX_RELEASE_CERT_SHA256: ${{ vars.RELEASE_CERT_SHA256 }}
+        run: bash scripts/build-migration-release.sh "$RUNNER_TEMP/termix-signing/termix-migration-v1.4.0.apk"
+
       - name: Create release App token
-        if: steps.queued-main.outputs.matches == 'true'
+        if: steps.queued-main.outputs.matches == 'true' && steps.migration-existing.outputs.published != 'true'
         id: release-app-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
@@ -142,11 +180,11 @@ jobs:
           owner: ${{ github.repository_owner }}
           repositories: ${{ github.event.repository.name }}
           permission-contents: write
-          permission-issues: write
-          permission-pull-requests: write
+          permission-issues: ${{ env.TERMIX_RELEASE_PHASE == 'stable' && 'write' || '' }}
+          permission-pull-requests: ${{ env.TERMIX_RELEASE_PHASE == 'stable' && 'write' || '' }}
 
       - name: Verify release App token repository scope
-        if: steps.queued-main.outputs.matches == 'true'
+        if: steps.queued-main.outputs.matches == 'true' && steps.migration-existing.outputs.published != 'true'
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           github-token: ${{ steps.release-app-token.outputs.token }}
@@ -158,37 +196,53 @@ jobs:
               throw new Error('Release App token must be scoped to this repository only.');
             }
 
-      - name: Confirm main has not advanced
-        if: steps.queued-main.outputs.matches == 'true'
+      - name: Confirm release commit is still eligible on main
+        if: steps.queued-main.outputs.matches == 'true' && steps.migration-existing.outputs.published != 'true'
         id: current-main
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         env:
           RELEASE_SHA: ${{ needs.verify.outputs.sha }}
         with:
           script: |
+            const sha = process.env.RELEASE_SHA;
             const { data: main } = await github.rest.git.getRef({ ...context.repo, ref: 'heads/main' });
-            if (main.object.sha === process.env.RELEASE_SHA) {
+            let eligible = main.object.sha === sha;
+            if (!eligible && process.env.TERMIX_RELEASE_PHASE === 'migration') {
+              const { data: comparison } = await github.rest.repos.compareCommitsWithBasehead({
+                ...context.repo, basehead: `${sha}...${main.object.sha}`, per_page: 1,
+              });
+              eligible = comparison.status === 'ahead';
+            }
+            if (eligible) {
               core.setOutput('matches', 'true');
             } else {
-              core.info('Skipping release because main has advanced since this CI run.');
+              core.info('Skipping release because this CI commit is no longer eligible on main.');
             }
 
       - name: Semantic Release
         id: publish
-        if: steps.current-main.outputs.matches == 'true'
+        if: steps.current-main.outputs.matches == 'true' && env.TERMIX_RELEASE_PHASE == 'stable'
         continue-on-error: true
         run: ./node_modules/.bin/semantic-release
         env:
           GITHUB_TOKEN: ${{ steps.release-app-token.outputs.token }}
           KEYSTORE_FILE: ${{ runner.temp }}/termix-signing/termix-keystore
           SIGNING_PROPERTIES_FILE: ${{ runner.temp }}/termix-signing/termix-signing.properties
+          TERMIX_RELEASE_CERT_SHA256: ${{ vars.RELEASE_CERT_SHA256 }}
 
       - name: Recover incomplete GitHub Release
-        if: steps.publish.outcome == 'failure'
+        if: steps.publish.outcome == 'failure' && env.TERMIX_RELEASE_PHASE == 'stable'
         env:
           GH_TOKEN: ${{ steps.release-app-token.outputs.token }}
           RELEASE_SHA: ${{ needs.verify.outputs.sha }}
         run: bash scripts/recover-release.sh "$RELEASE_SHA"
+
+      - name: Publish Android migration prerelease
+        if: steps.current-main.outputs.matches == 'true' && env.TERMIX_RELEASE_PHASE == 'migration'
+        env:
+          GH_TOKEN: ${{ steps.release-app-token.outputs.token }}
+          RELEASE_SHA: ${{ needs.verify.outputs.sha }}
+        run: bash scripts/publish-migration-release.sh "$RUNNER_TEMP/termix-signing/termix-migration-v1.4.0.apk"
 
       - name: Clean up signing files
         if: always()

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
     <cache-path name="diagnostics" path="diagnostics/" />
+    <cache-path name="github_updates" path="github-updates/" />
     <external-path
         name="external_files"
         path="." />

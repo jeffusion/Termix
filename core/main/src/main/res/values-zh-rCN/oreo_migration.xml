@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="oreo_migration_title">Android 8 数据迁移</string>
+    <string name="oreo_migration_export_guide">请先结束所有 Termix 终端会话，再将备份保存到下载目录或其他 Termix 之外的目录。运行中的进程和临时文件不包含在备份中。请妥善保管备份，其中可能含有密码和私钥。</string>
+    <string name="oreo_migration_import_guide">请准备旧版导出的备份和单独保存的恢复密钥，并在使用新安装的 Termix 前完成恢复。</string>
+    <string name="oreo_migration_export">选择备份保存位置</string>
+    <string name="oreo_migration_import">选择备份以恢复</string>
+    <string name="oreo_migration_skip">直接开始使用</string>
+    <string name="oreo_migration_close">关闭 Termix</string>
+    <string name="oreo_migration_retry">重试</string>
+    <string name="oreo_migration_working">正在处理，请保持 Termix 打开。</string>
+    <string name="oreo_migration_export_complete">Termix 已完整读回并校验加密备份。请先确认备份文件和单独保存的恢复密钥都在手边，再卸载旧版。正式版需要两者才能恢复。</string>
+    <string name="oreo_migration_import_complete">恢复文件已就绪。关闭后重新打开 Termix，即可完成迁移并加载设置。</string>
+    <string name="oreo_migration_existing_data">当前安装已有数据。关闭后重新打开 Termix，即可继续使用。</string>
+    <string name="oreo_migration_export_error">备份写入或校验未完成。请保留旧版 Termix 并重试。</string>
+    <string name="oreo_migration_import_error">恢复未完成。请保留备份，核对恢复密钥和可用存储空间，再重试。</string>
+    <string name="oreo_migration_picker_error">Android 未能打开文件选择器。</string>
+    <string name="oreo_migration_key">恢复密钥</string>
+    <string name="oreo_migration_save_key">继续前，请结束终端会话，并停止会写入 Termix 的后台任务。请把以下恢复密钥单独保存到密码管理器或记在纸上。\n\n%1$s</string>
+    <string name="oreo_migration_key_saved">会话已结束，密钥已保存</string>
+    <string name="oreo_migration_verify_saved_key">输入你另存的恢复密钥</string>
+    <string name="oreo_migration_view_key_again">重新查看密钥</string>
+    <string name="oreo_migration_key_mismatch">输入的密钥与导出时显示的不同。请重试，或重新查看密钥。</string>
+    <string name="oreo_migration_enter_key">输入恢复密钥</string>
+    <string name="oreo_migration_invalid_key">请输入导出时显示的完整恢复密钥。</string>
+    <string name="oreo_migration_missing_key">请重新输入或生成恢复密钥后继续。</string>
+    <string name="oreo_migration_open_terminal">打开旧终端</string>
+    <string name="oreo_migration_return_to_backup">返回数据备份</string>
+    <string name="oreo_migration_return_to_backup_guide">请先保存工作并停止后台任务。Termix 将结束剩余会话。重新打开应用即可返回备份。</string>
+    <string name="oreo_migration_close_terminal">结束终端会话</string>
+</resources>

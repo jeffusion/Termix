@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Settings as SettingsIcon
 import androidx.compose.material3.AlertDialog
@@ -42,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -50,6 +52,7 @@ import androidx.navigation.NavController
 import com.rk.components.compose.preferences.base.PreferenceColumn
 import com.rk.components.compose.preferences.base.PreferenceGroup
 import com.rk.components.compose.preferences.switch.PreferenceSwitch
+import com.termix.core.R
 import com.termix.resources.drawables
 import com.termix.resources.strings
 import com.termix.settings.Settings
@@ -58,6 +61,7 @@ import com.termix.ui.components.terminalEnvironmentDescriptionRes
 import com.termix.ui.components.terminalEnvironmentFromWorkingMode
 import com.termix.ui.components.terminalEnvironmentToWorkingMode
 import com.termix.ui.components.workingModeIsRoot
+import com.termix.update.GitHubAppUpdater
 import java.text.NumberFormat
 import kotlin.math.roundToInt
 
@@ -66,12 +70,15 @@ private enum class SettingsPage(val title: Int, val summary: Int) {
     KEYBOARD(strings.settings_keyboard_and_input, strings.settings_keyboard_summary),
     APPEARANCE(strings.settings_appearance_and_layout, strings.settings_appearance_summary),
     PERMISSIONS(strings.permissions, strings.settings_permissions_summary),
+    ABOUT(R.string.about_termix_title, R.string.about_termix_summary),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Settings(navController: NavController) {
     var page by rememberSaveable { mutableStateOf<SettingsPage?>(null) }
+    val context = LocalContext.current
+    val updater = remember(context) { GitHubAppUpdater.from(context) }
     BackHandler(enabled = page != null) { page = null }
 
     Scaffold(
@@ -99,7 +106,13 @@ fun Settings(navController: NavController) {
                             SettingsPage.entries.forEach { category ->
                                 SettingsLink(
                                     title = stringResource(category.title),
-                                    summary = stringResource(category.summary),
+                                    summary = stringResource(
+                                        if (category == SettingsPage.ABOUT && updater == null) {
+                                            R.string.about_termix_version_only
+                                        } else {
+                                            category.summary
+                                        },
+                                    ),
                                     icon = {
                                         val tint = MaterialTheme.colorScheme.primary
                                         when (category) {
@@ -107,6 +120,9 @@ fun Settings(navController: NavController) {
                                             SettingsPage.KEYBOARD -> Icon(Icons.Outlined.Edit, null, tint = tint)
                                             SettingsPage.APPEARANCE -> Icon(Icons.Outlined.SettingsIcon, null, tint = tint)
                                             SettingsPage.PERMISSIONS -> Icon(Icons.Outlined.Lock, null, tint = tint)
+                                            SettingsPage.ABOUT -> Icon(
+                                                Icons.Outlined.Info, null, Modifier.size(24.dp), tint = tint,
+                                            )
                                         }
                                     },
                                     onClick = { page = category },
@@ -121,6 +137,7 @@ fun Settings(navController: NavController) {
                     SettingsPage.KEYBOARD -> KeyboardSettings()
                     SettingsPage.APPEARANCE -> AppearanceSettings()
                     SettingsPage.PERMISSIONS -> PermissionSettings()
+                    SettingsPage.ABOUT -> AboutTermix(updater)
                 }
             }
         }

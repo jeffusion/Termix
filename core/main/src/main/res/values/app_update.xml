@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="about_termix_title">About Termix</string>
+    <string name="about_termix_summary">Version information, check for updates</string>
+    <string name="about_termix_version_only">Version information</string>
+    <string name="about_termix_unknown_version">Unknown</string>
+    <string name="app_update_installed">Current version %1$s</string>
+    <string name="app_update_check">Check for updates</string>
+    <string name="app_update_checking">Checking for updates…</string>
+    <string name="app_update_current">Termix is up to date.</string>
+    <string name="app_update_available">Update available</string>
+    <string name="app_update_new_version">New version</string>
+    <string name="app_update_apk_size">APK size</string>
+    <string name="app_update_available_notice">Termix %1$s is available in Settings → About Termix.</string>
+    <string name="app_update_download">Download update</string>
+    <string name="app_update_downloading">Downloading… %1$d%%</string>
+    <string name="app_update_verifying">Verifying the APK…</string>
+    <string name="app_update_cancel">Cancel download</string>
+    <string name="app_update_cancelling">Cancelling download…</string>
+    <string name="app_update_ready">Termix %1$s is verified and ready to install.</string>
+    <string name="app_update_discard">Discard downloaded APK</string>
+    <string name="app_update_install">Install update</string>
+    <string name="app_update_session_warning">Installing the update may interrupt open terminal sessions. Save your work first.</string>
+    <string name="app_update_unknown_source">Allow Android to install apps from Termix, then return here to open the installer.</string>
+    <string name="app_update_allow_source">Open Android settings</string>
+    <string name="app_update_source_settings_error">Android could not open the install permission screen.</string>
+    <string name="app_update_installer_error">Android could not open the package installer.</string>
+    <string name="app_update_network_error">Could not reach or download from GitHub. Check your connection and try again.</string>
+    <string name="app_update_rate_error">GitHub is limiting requests. Try again later.</string>
+    <string name="app_update_verify_error">The release or APK failed verification. Try again later.</string>
+    <string name="app_update_storage_error">Could not save or find the APK. Check available storage and try again.</string>
+    <string name="app_update_retry">Try again</string>
+</resources>

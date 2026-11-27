@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="oreo_migration_title">Android 8 data migration</string>
+    <string name="oreo_migration_export_guide">Close all Termix terminal sessions before backing up. Save the backup in Downloads or another folder outside Termix. Terminal processes and temporary files are excluded. The backup may contain passwords and private keys.</string>
+    <string name="oreo_migration_import_guide">Have the backup and the separate recovery key ready. You can restore your data before using this new installation.</string>
+    <string name="oreo_migration_export">Choose where to save</string>
+    <string name="oreo_migration_import">Choose backup to restore</string>
+    <string name="oreo_migration_skip">Start without a backup</string>
+    <string name="oreo_migration_close">Close Termix</string>
+    <string name="oreo_migration_retry">Retry</string>
+    <string name="oreo_migration_working">Working. Keep Termix open.</string>
+    <string name="oreo_migration_export_complete">Termix read the entire encrypted backup back and verified it. Confirm you have the saved file and its separate recovery key before uninstalling. The official app needs both to restore your data.</string>
+    <string name="oreo_migration_import_complete">The restored files are ready. Close and reopen Termix to finish and load your settings.</string>
+    <string name="oreo_migration_existing_data">This installation already has data. Close and reopen Termix to use it.</string>
+    <string name="oreo_migration_export_error">The backup did not finish or could not be verified. Keep the old Termix installed and try again.</string>
+    <string name="oreo_migration_import_error">The restore could not finish. Keep the backup and check its recovery key and available storage before retrying.</string>
+    <string name="oreo_migration_picker_error">Android could not open the file picker.</string>
+    <string name="oreo_migration_key">Recovery key</string>
+    <string name="oreo_migration_save_key">Before continuing, end all terminal sessions and stop background jobs that can write to Termix. Save this recovery key separately in a password manager or on paper.\n\n%1$s</string>
+    <string name="oreo_migration_key_saved">Sessions stopped and key saved</string>
+    <string name="oreo_migration_verify_saved_key">Enter the recovery key you saved</string>
+    <string name="oreo_migration_view_key_again">View key again</string>
+    <string name="oreo_migration_key_mismatch">The key differs from the one shown on export. Try again or view it again.</string>
+    <string name="oreo_migration_enter_key">Enter the recovery key</string>
+    <string name="oreo_migration_invalid_key">Enter the complete recovery key shown on export.</string>
+    <string name="oreo_migration_missing_key">Enter or generate the recovery key again to continue.</string>
+    <string name="oreo_migration_open_terminal">Open old terminal</string>
+    <string name="oreo_migration_return_to_backup">Return to data backup</string>
+    <string name="oreo_migration_return_to_backup_guide">Save your work and stop background jobs. Termix will close the remaining sessions. Reopen Termix to return to backup.</string>
+    <string name="oreo_migration_close_terminal">Close terminal sessions</string>
+</resources>
