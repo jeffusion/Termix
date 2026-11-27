@@ -34,6 +34,8 @@ bash scripts/prepare-release-apk.sh "$version"
 
 迁移改动合入 `main` 后，发布工作流会等待该提交的 `main` 推送 CI 通过，再用正式签名构建并发布迁移预发布，同时附上音频源码归档。迁移阶段只执行这一条发布路径。确认迁移预发布可下载后，再通过后续 PR 将工作流的 `TERMIX_RELEASE_PHASE` 切换为 `stable`。
 
+如果发布失败，重跑原来的 Semantic Release 运行。运行会优先复用其中已验签的 APK，再继续上传和核对草稿资产。
+
 本地验证时，按上面的正式签名步骤构建 `1.4.0 / 15`，用它作为迁移包的输入。设置 `KEYSTORE_FILE`、`TERMIX_RELEASE_KEY_ALIAS`、`TERMIX_RELEASE_STORE_PASSWORD`、`TERMIX_RELEASE_KEY_PASSWORD`、`TERMIX_RELEASE_CERT_SHA256` 和轮换证明的输出路径 `lineage`。用 Build Tools 36.0.0 生成证明和迁移包。旧证书只保留 `installed-data` 能力。
 
 ```sh
