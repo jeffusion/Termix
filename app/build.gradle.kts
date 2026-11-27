@@ -98,9 +98,8 @@ android {
         //noinspection ExpiredTargetSdkVersion
         targetSdk = 28
 
-        // Reserve code 15 for the migration pre-release so the next stable release uses 16.
-        versionCode = 15
-        versionName = "1.4.0"
+        versionCode = 16
+        versionName = "1.4.1"
         vectorDrawables {
             useSupportLibrary = true
         }

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-[[ "$#" -eq 1 ]] || { printf 'Usage: %s <termix-migration-v1.4.0.apk>\n' "$0" >&2; exit 1; }
+[[ "$#" -eq 1 ]] || { printf 'Usage: %s <output-dir/termix-v1.4.1.apk>\n' "$0" >&2; exit 1; }
 : "${KEYSTORE_FILE:?Set KEYSTORE_FILE to the release keystore}"
 : "${SIGNING_PROPERTIES_FILE:?Set SIGNING_PROPERTIES_FILE to the release signing properties}"
 
@@ -10,7 +10,7 @@ load_release_signing
 
 unset GH_TOKEN GITHUB_TOKEN
 TERMIX_OFFICIAL_RELEASE=true ./gradlew --no-daemon :app:assembleRelease
-bash scripts/prepare-release-apk.sh 1.4.0
+bash scripts/prepare-release-apk.sh 1.4.1
 
 work_dir=$(mktemp -d)
 trap 'rm -rf -- "$work_dir"' EXIT
@@ -59,5 +59,5 @@ java "$work_dir/MigrationSigning.java" "$SIGNING_PROPERTIES_FILE" bash -euo pipe
     --set-rollback false --set-auth false \
     --new-signer --ks "$KEYSTORE_FILE" --ks-key-alias "$TERMIX_RELEASE_KEY_ALIAS" \
     --ks-pass env:TERMIX_RELEASE_STORE_PASSWORD --key-pass env:TERMIX_RELEASE_KEY_PASSWORD
-  bash scripts/prepare-migration-apk.sh app/termix-v1.4.0.apk "$lineage" "$migration_apk"
+  bash scripts/prepare-migration-apk.sh app/termix-v1.4.1.apk "$lineage" "$migration_apk"
 ' migration-signing "$apksigner" "$work_dir/lineage" "$1"
