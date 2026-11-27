@@ -7,6 +7,7 @@ import android.content.res.AssetFileDescriptor
 import android.database.Cursor
 import android.database.MatrixCursor
 import android.graphics.Point
+import android.os.Build
 import android.os.CancellationSignal
 import android.os.ParcelFileDescriptor
 import android.provider.DocumentsContract
@@ -15,6 +16,7 @@ import android.util.Log
 import android.webkit.MimeTypeMap
 import com.termix.libcommons.alpineHomeDir
 import com.termix.libcommons.archHomeDir
+import com.termix.migration.OreoMigrationActivity
 import com.termix.resources.getString
 import com.termix.resources.strings
 import com.termix.settings.Settings
@@ -33,6 +35,7 @@ class AlpineDocumentProvider : DocumentsProvider() {
             projection
                 ?: DEFAULT_ROOT_PROJECTION
         )
+        if (isMigrationPending()) return result
         val applicationName = "Termix"
 
         val baseDir = getBaseDir()
@@ -107,6 +110,18 @@ class AlpineDocumentProvider : DocumentsProvider() {
 
     override fun onCreate(): Boolean {
         return true
+    }
+
+    private fun isMigrationPending(): Boolean =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            context?.let(OreoMigrationActivity::pending) == true
+
+    @Throws(FileNotFoundException::class)
+    private fun getFileForDocId(docId: String): File {
+        if (isMigrationPending()) throw FileNotFoundException("Termix data migration is in progress")
+        val file = File(docId)
+        if (!file.exists()) throw FileNotFoundException(file.absolutePath + " not found")
+        return file
     }
 
     @Throws(FileNotFoundException::class)
@@ -308,16 +323,6 @@ class AlpineDocumentProvider : DocumentsProvider() {
          */
         private fun getDocIdForFile(file: File): String {
             return file.absolutePath
-        }
-
-        /**
-         * Get the file given a document id (the reverse of [.getDocIdForFile]).
-         */
-        @Throws(FileNotFoundException::class)
-        private fun getFileForDocId(docId: String): File {
-            val f = File(docId)
-            if (!f.exists()) throw FileNotFoundException(f.absolutePath + " not found")
-            return f
         }
 
         private fun getMimeType(file: File): String {

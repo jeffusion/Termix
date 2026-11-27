@@ -13,6 +13,7 @@ plugins {
     alias(libs.plugins.compose.compiler)
 }
 
+val officialRelease = providers.environmentVariable("TERMIX_OFFICIAL_RELEASE").orNull == "true"
 
 android {
     namespace = "com.termix.app"
@@ -26,51 +27,39 @@ android {
     
     signingConfigs {
         create("release") {
-            val isGITHUB_ACTION = System.getenv("GITHUB_ACTIONS") == "true"
-            fun useTestKeyFallback() {
+            val githubActions = System.getenv("GITHUB_ACTIONS") == "true"
+            val propertiesFile = rootProject.file(
+                System.getenv("SIGNING_PROPERTIES_FILE")
+                    ?: if (githubActions) "/tmp/termix-signing.properties" else "signing.properties"
+            )
+            val properties = Properties()
+            if (propertiesFile.isFile) propertiesFile.inputStream().use(properties::load)
+
+            val resolvedKeyAlias = properties.getProperty("keyAlias")
+            val resolvedKeyPassword = properties.getProperty("keyPassword")
+            val resolvedStorePassword = properties.getProperty("storePassword")
+            val resolvedStoreFile = (
+                System.getenv("KEYSTORE_FILE")?.takeIf { it.isNotBlank() }
+                    ?: if (githubActions) "/tmp/termix-keystore" else properties.getProperty("storeFile")
+                )?.takeIf { it.isNotBlank() }?.let(rootProject::file)
+
+            if (
+                !resolvedKeyAlias.isNullOrBlank() &&
+                !resolvedKeyPassword.isNullOrBlank() &&
+                !resolvedStorePassword.isNullOrBlank() &&
+                resolvedStoreFile?.isFile == true &&
+                resolvedStoreFile.length() > 0
+            ) {
+                keyAlias = resolvedKeyAlias
+                keyPassword = resolvedKeyPassword
+                storeFile = resolvedStoreFile
+                storePassword = resolvedStorePassword
+            } else {
+                check(!officialRelease) { "Official release requires complete Android signing configuration." }
+                storeFile = file("testkey.keystore")
+                storePassword = "testkey"
                 keyAlias = "testkey"
                 keyPassword = "testkey"
-                storeFile = file(layout.buildDirectory.dir("../testkey.keystore"))
-                storePassword = "testkey"
-            }
-            
-            val propertiesFilePath = if (isGITHUB_ACTION) {
-                System.getenv("SIGNING_PROPERTIES_FILE") ?: "/tmp/termix-signing.properties"
-            } else {
-                rootProject.file("signing.properties").absolutePath
-            }
-            
-            val propertiesFile = File(propertiesFilePath)
-            if (propertiesFile.exists()) {
-                val properties = Properties()
-                properties.load(propertiesFile.inputStream())
-                val resolvedKeyAlias = properties["keyAlias"] as String?
-                val resolvedKeyPassword = properties["keyPassword"] as String?
-                val resolvedStorePassword = properties["storePassword"] as String?
-                val resolvedStoreFile = if (isGITHUB_ACTION) {
-                    System.getenv("KEYSTORE_FILE")?.takeIf { it.isNotBlank() }?.let(::File) ?: File("/tmp/termix-keystore")
-                } else {
-                    (properties["storeFile"] as String?)?.let { File(it) }
-                }
-
-                if (
-                    !resolvedKeyAlias.isNullOrBlank() &&
-                    !resolvedKeyPassword.isNullOrBlank() &&
-                    !resolvedStorePassword.isNullOrBlank() &&
-                    resolvedStoreFile?.exists() == true &&
-                    resolvedStoreFile.length() > 0
-                ) {
-                    keyAlias = resolvedKeyAlias
-                    keyPassword = resolvedKeyPassword
-                    storeFile = resolvedStoreFile
-                    storePassword = resolvedStorePassword
-                } else {
-                    println("Signing properties are incomplete at $propertiesFilePath, falling back to testkey")
-                    useTestKeyFallback()
-                }
-            } else {
-                println("Signing properties file not found at $propertiesFilePath")
-                useTestKeyFallback()
             }
         }
         getByName("debug") {
@@ -92,6 +81,7 @@ android {
             )
             signingConfig = signingConfigs.getByName("release")
             resValue("string","app_name","Termix")
+            manifestPlaceholders["githubAppUpdates"] = officialRelease.toString()
         }
         debug{
             applicationIdSuffix = ".debug"
@@ -104,11 +94,12 @@ android {
     defaultConfig {
         applicationId = "com.termix.app"
         minSdk = 26
+        manifestPlaceholders["githubAppUpdates"] = "false"
         //noinspection ExpiredTargetSdkVersion
         targetSdk = 28
 
-        //versioning
-        versionCode = 14
+        // Reserve code 15 for the migration pre-release so the next stable release uses 16.
+        versionCode = 15
         versionName = "1.4.0"
         vectorDrawables {
             useSupportLibrary = true

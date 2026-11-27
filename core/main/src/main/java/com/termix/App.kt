@@ -8,6 +8,7 @@ import com.github.anrwatchdog.ANRWatchDog
 import com.termix.core.BuildConfig
 import com.termix.crashhandler.CrashHandler
 import com.termix.libcommons.application
+import com.termix.migration.OreoMigrationActivity
 import com.termix.resources.Res
 import com.termix.update.UpdateManager
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -42,8 +43,10 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         CrashHandler.install(this)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && OreoMigrationActivity.pending(this)) return
 
         GlobalScope.launch(Dispatchers.IO) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) OreoMigrationActivity.cleanupAfterDone(this@App)
             getTempDir().apply {
                 if (exists() && listFiles().isNullOrEmpty().not()){ deleteRecursively() }
             }
