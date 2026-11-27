@@ -11,7 +11,7 @@ permissions:
   actions: read
 
 env:
-  TERMIX_RELEASE_PHASE: migration
+  TERMIX_RELEASE_PHASE: stable
 
 jobs:
   verify:
@@ -135,6 +135,21 @@ jobs:
           github-token: ${{ github.token }}
           run-id: ${{ github.run_id }}
           path: ${{ runner.temp }}/termix-migration-apk
+
+      - name: Require the published v1.4.1 migration release
+        if: steps.queued-main.outputs.matches == 'true' && env.TERMIX_RELEASE_PHASE == 'stable'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ needs.verify.outputs.sha }}
+        run: |
+          set -euo pipefail
+          result=$(mktemp)
+          trap 'rm -f -- "$result"' EXIT
+          GITHUB_OUTPUT="$result" bash scripts/publish-migration-release.sh --check-published
+          if ! grep -Fxq 'published=true' "$result"; then
+            echo '::error::Publish and verify v1.4.1 before publishing a regular stable release.'
+            exit 1
+          fi
 
       - name: Set up JDK 17
         if: steps.queued-main.outputs.matches == 'true' && steps.migration-existing.outputs.published != 'true' && steps.migration-artifact.outputs.id == ''
