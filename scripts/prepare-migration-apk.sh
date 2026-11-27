@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [[ "$#" -ne 3 ]]; then
-  printf 'Usage: %s <regular-release.apk> <signing-lineage> <termix-migration-v1.4.0.apk>\n' "$0" >&2
+  printf 'Usage: %s <regular-release.apk> <signing-lineage> <output-dir/termix-v1.4.1.apk>\n' "$0" >&2
   exit 1
 fi
 
@@ -12,8 +12,8 @@ load_release_signing
 regular_apk=$1
 lineage=$2
 migration_apk=$3
-[[ "${migration_apk##*/}" == termix-migration-v1.4.0.apk && ! -e "$migration_apk" && ! -L "$migration_apk" ]] ||
-  signing_error 'The output must be a new file named termix-migration-v1.4.0.apk.'
+[[ "${migration_apk##*/}" == termix-v1.4.1.apk && ! -e "$migration_apk" && ! -L "$migration_apk" ]] ||
+  signing_error 'The output must be a new file named termix-v1.4.1.apk.'
 
 verify_release_apk_signer "$regular_apk" 26
 verify_release_apk_manifest "$regular_apk"
@@ -22,8 +22,8 @@ if grep -Fxq 'permission: com.termix.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSIO
   signing_error 'Android 9 cannot rotate the signing key while redeclaring the legacy AndroidX receiver permission.'
 fi
 
-[[ "$release_version_name" == 1.4.0 && "$release_version_code" -eq 15 ]] ||
-  signing_error 'The migration pre-release requires versionName 1.4.0 and versionCode 15.'
+[[ "$release_version_name" == 1.4.1 && "$release_version_code" -eq 16 ]] ||
+  signing_error 'The migration release requires versionName 1.4.1 and versionCode 16.'
 
 lineage_info=$("$apksigner" lineage --in "$lineage" --print-certs)
 lineage_certs=$(awk '/^Signer #[0-9]+ in lineage certificate SHA-256 digest: / { print $NF }' <<< "$lineage_info")

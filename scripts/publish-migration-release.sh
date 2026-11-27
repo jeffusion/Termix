@@ -12,23 +12,23 @@ fail() {
 [[ "$RELEASE_SHA" =~ ^[a-f0-9]{40}$ && "$(git rev-parse HEAD)" == "$RELEASE_SHA" ]] ||
   fail 'Checkout does not match the verified CI commit.'
 
-tag=migration-v1.4.0
+tag=v1.4.1
 tag_ref="refs/tags/$tag"
 repo="repos/$GITHUB_REPOSITORY"
-name='Termix 1.4.0 signing migration'
+name='Termix 1.4.1 signing migration'
 apk_name="termix-$tag.apk"
 audio=third_party/termux-audio/termix-audio-sources.tar.xz
 
 release_notes() {
   local sha=$1
   cat <<EOF
-This preview migrates existing Termix installations signed with the former test key.
+Termix 1.4.1 is the signing migration release for installations signed with the former test key. The next regular stable release is still pending.
 
 **Android 9 and newer**
-Close your terminal sessions, install \`termix-migration-v1.4.0.apk\` over your existing Termix installation, and check your Linux environments and settings. When the stable release is available, check for updates in **Settings → About Termix**.
+Close your terminal sessions, install \`$apk_name\` over your existing Termix installation, and check your Linux environments and settings. If you installed the 1.4.0 signing migration preview, you can update to 1.4.1 from **Settings → About Termix**. After migrating, use the same menu to check for subsequent stable releases.
 
 **Android 8.0 and 8.1**
-Wait until the regular APK is available in a stable release. Then install the migration APK over your existing app, export your data, and keep the backup and recovery key before uninstalling. Install the regular APK and restore your data. Follow the [Android 8 migration guide](https://github.com/$GITHUB_REPOSITORY/blob/$sha/docs/android-8-data-migration.md).
+Wait for a later regular stable release before uninstalling. Once its APK is available, install \`$apk_name\` over your existing app, export your data, and verify that you have both the backup and recovery key. Then uninstall Termix, install the later regular APK, and restore your data. Follow the [Android 8 migration guide](https://github.com/$GITHUB_REPOSITORY/blob/$sha/docs/android-8-data-migration.md).
 EOF
 }
 
@@ -61,7 +61,7 @@ check_release_metadata() {
     --arg apk "$apk_name" --arg audio "${audio##*/}" --argjson draft "$expected_draft" '
     def positive_integer: type == "number" and . > 0 and floor == .;
     .tag_name == $tag and .target_commitish == $sha and .name == $name and .body == $notes and
-    .prerelease == true and .draft == $draft and (.id | positive_integer) and
+    .prerelease == false and .draft == $draft and (.id | positive_integer) and
     (if $draft then .published_at == null else (.published_at | type == "string" and length > 0) end) and
     (.assets | type == "array" and length == (map(.name) | unique | length) and
       length == (map(.id) | unique | length) and
@@ -92,14 +92,14 @@ if [[ $(jq -r '.draft' <<< "$release") == false ]]; then
   jq -e '(.assets | length) == 2 and all(.assets[]; .state == "uploaded" and
     (.size | type == "number" and . > 0 and floor == .) and
     (.digest | type == "string" and test("^sha256:[0-9a-f]{64}$")))' <<< "$release" >/dev/null ||
-    fail "Invalid assets for published migration prerelease $tag."
+    fail "Invalid assets for published migration release $tag."
   tag_status=$(tag_target "$published_sha")
-  [[ "$tag_status" == matches ]] || fail 'Published migration prerelease is missing its tag.'
+  [[ "$tag_status" == matches ]] || fail 'Published migration release is missing its tag.'
   check_main "$published_sha"
   if [[ ${1:-} == --check-published ]]; then
     printf 'published=true\n' >> "${GITHUB_OUTPUT:?GitHub Actions step output file is required}"
   fi
-  printf 'Verified existing migration prerelease %s.\n' "$tag"
+  printf 'Verified existing migration release %s.\n' "$tag"
   exit 0
 fi
 
@@ -133,7 +133,7 @@ check_main "$RELEASE_SHA"
 if [[ "$release" == null ]]; then
   notes=$(release_notes "$RELEASE_SHA")
   release=$(gh api --method POST "$repo/releases" -f tag_name="$tag" -f name="$name" \
-    -f target_commitish="$RELEASE_SHA" -f body="$notes" -F draft=true -F prerelease=true -f make_latest=false)
+    -f target_commitish="$RELEASE_SHA" -f body="$notes" -F draft=true -F prerelease=false -f make_latest=false)
 fi
 check_release_metadata true "$RELEASE_SHA" <<< "$release"
 check_local_assets false <<< "$release"
@@ -182,7 +182,7 @@ fi
 tag_status=$(tag_target "$RELEASE_SHA")
 [[ "$tag_status" == matches ]] || fail 'Could not verify the migration tag.'
 check_main "$RELEASE_SHA"
-release=$(gh api --method PATCH "$repo/releases/$release_id" -F draft=false -f make_latest=false)
+release=$(gh api --method PATCH "$repo/releases/$release_id" -F draft=false -f make_latest=true)
 check_release_metadata false "$RELEASE_SHA" <<< "$release"
 check_local_assets true <<< "$release"
-printf 'Published migration prerelease %s at %s.\n' "$tag" "$RELEASE_SHA"
+printf 'Published migration release %s at %s.\n' "$tag" "$RELEASE_SHA"

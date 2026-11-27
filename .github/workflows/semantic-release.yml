@@ -107,7 +107,7 @@ jobs:
           esac
           git switch --create main "$RELEASE_SHA"
 
-      - name: Check for a published migration prerelease
+      - name: Check for a published migration release
         if: steps.queued-main.outputs.matches == 'true' && env.TERMIX_RELEASE_PHASE == 'migration'
         id: migration-existing
         env:
@@ -192,14 +192,14 @@ jobs:
           TERMIX_RELEASE_CERT_SHA256: ${{ vars.RELEASE_CERT_SHA256 }}
         run: |
           mkdir -p -- "$RUNNER_TEMP/termix-migration-apk"
-          bash scripts/build-migration-release.sh "$RUNNER_TEMP/termix-migration-apk/termix-migration-v1.4.0.apk"
+          bash scripts/build-migration-release.sh "$RUNNER_TEMP/termix-migration-apk/termix-v1.4.1.apk"
 
       - name: Preserve verified migration APK for release retries
         if: steps.queued-main.outputs.matches == 'true' && env.TERMIX_RELEASE_PHASE == 'migration' && steps.migration-existing.outputs.published != 'true' && steps.migration-artifact.outputs.id == ''
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: migration-${{ needs.verify.outputs.sha }}
-          path: ${{ runner.temp }}/termix-migration-apk/termix-migration-v1.4.0.apk
+          path: ${{ runner.temp }}/termix-migration-apk/termix-v1.4.1.apk
           if-no-files-found: error
 
       - name: Create release App token
@@ -269,12 +269,12 @@ jobs:
           RELEASE_SHA: ${{ needs.verify.outputs.sha }}
         run: bash scripts/recover-release.sh "$RELEASE_SHA"
 
-      - name: Publish Android migration prerelease
+      - name: Publish Android migration release
         if: steps.current-main.outputs.matches == 'true' && env.TERMIX_RELEASE_PHASE == 'migration'
         env:
           GH_TOKEN: ${{ steps.release-app-token.outputs.token }}
           RELEASE_SHA: ${{ needs.verify.outputs.sha }}
-        run: bash scripts/publish-migration-release.sh "$RUNNER_TEMP/termix-migration-apk/termix-migration-v1.4.0.apk"
+        run: bash scripts/publish-migration-release.sh "$RUNNER_TEMP/termix-migration-apk/termix-v1.4.1.apk"
 
       - name: Clean up signing files
         if: always()
