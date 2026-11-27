@@ -54,13 +54,15 @@ tag_target() {
       end'
 }
 
+# Published notes may be updated when the regular APK becomes available.
 check_release_metadata() {
   local expected_draft=$1 sha=$2 notes
   notes=$(release_notes "$sha")
   jq -e --arg tag "$tag" --arg sha "$sha" --arg name "$name" --arg notes "$notes" \
     --arg apk "$apk_name" --arg audio "${audio##*/}" --argjson draft "$expected_draft" '
     def positive_integer: type == "number" and . > 0 and floor == .;
-    .tag_name == $tag and .target_commitish == $sha and .name == $name and .body == $notes and
+    .tag_name == $tag and .target_commitish == $sha and
+    (if $draft then .name == $name and .body == $notes else true end) and
     .prerelease == false and .draft == $draft and (.id | positive_integer) and
     (if $draft then .published_at == null else (.published_at | type == "string" and length > 0) end) and
     (.assets | type == "array" and length == (map(.name) | unique | length) and
