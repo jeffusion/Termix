@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 env:
-  TERMIX_RELEASE_PHASE: migration
+  TERMIX_RELEASE_PHASE: stable
 
 jobs:
   verify:
@@ -113,6 +113,25 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_SHA: ${{ needs.verify.outputs.sha }}
         run: bash scripts/publish-migration-release.sh --check-published
+
+      - name: Require the migration prerelease before the first stable release
+        if: steps.queued-main.outputs.matches == 'true' && env.TERMIX_RELEASE_PHASE == 'stable'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ needs.verify.outputs.sha }}
+        run: |
+          set -euo pipefail
+          version_code=$(sed -nE 's/^[[:space:]]*versionCode = ([0-9]+)[[:space:]]*$/\1/p' app/build.gradle.kts)
+          [[ "$version_code" =~ ^[0-9]+$ ]]
+          if [[ "$version_code" == 15 ]]; then
+            result=$(mktemp)
+            trap 'rm -f -- "$result"' EXIT
+            GITHUB_OUTPUT="$result" bash scripts/publish-migration-release.sh --check-published
+            if ! grep -Fxq 'published=true' "$result"; then
+              echo '::error::Publish and verify migration-v1.4.0 before the first stable release.'
+              exit 1
+            fi
+          fi
 
       - name: Set up JDK 17
         if: steps.queued-main.outputs.matches == 'true' && steps.migration-existing.outputs.published != 'true'

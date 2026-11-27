@@ -3,14 +3,15 @@
   "tagFormat": "v${version}",
   "plugins": [
     "@semantic-release/commit-analyzer",
-    "@semantic-release/release-notes-generator",
-    "@semantic-release/changelog",
     [
       "@semantic-release/exec",
       {
+        "generateNotesCmd": "if [ '${lastRelease.version}' = '1.4.0' ]; then printf '%s\\n' '## Android signing migration' '' 'If your current APK is signed with the former test key (including v1.3.0 and v1.4.0), follow the [migration prerelease instructions](https://github.com/jeffusion/Termix/releases/tag/migration-v1.4.0) before using the regular APK.'; fi",
         "prepareCmd": "env -u GITHUB_TOKEN TERMIX_OFFICIAL_RELEASE=true bash -c 'bash scripts/bump-version.sh ${nextRelease.version} && ./gradlew app:lintDebug testDebugUnitTest assembleRelease && bash scripts/prepare-release-apk.sh ${nextRelease.version}'"
       }
     ],
+    "@semantic-release/release-notes-generator",
+    "@semantic-release/changelog",
     [
       "@semantic-release/git",
       {
